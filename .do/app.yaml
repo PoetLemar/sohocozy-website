@@ -1,0 +1,15 @@
+name: sohocozy
+region: nyc
+static_sites:
+  - name: site
+    git:
+      repo_clone_url: https://github.com/PoetLemar/sohocozy-website.git
+      branch: main
+    source_dir: /
+    index_document: index.html
+    error_document: index.html
+domains:
+  - domain: sohocozystore.com
+    type: PRIMARY
+  - domain: www.sohocozystore.com
+    type: ALIAS
