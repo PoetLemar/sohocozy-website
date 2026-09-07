@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Soho Cozy — curated comfort</title>
+<meta name="description" content="Soho Cozy — a small boutique of soft things. Shirts and crop tops in colors that feel like golden hour.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #f6efe6;
+    --cream-deep: #efe4d5;
+    --ink: #3d3128;
+    --ink-soft: #7a6a5a;
+    --blush: #d9a98f;
+    --gold: #b8865f;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    overflow: hidden;
+  }
+  #scene { position: fixed; inset: 0; display: block; }
+  .veil {
+    position: fixed; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse at 50% 42%, transparent 40%, rgba(246,239,230,.55) 100%);
+  }
+  main {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center; padding: 0 24px;
+  }
+  header {
+    position: fixed; top: 0; left: 0; right: 0;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 28px 36px;
+  }
+  .mark {
+    font-family: 'Fraunces', serif; font-weight: 500;
+    letter-spacing: .42em; font-size: 14px; text-indent: .42em;
+    color: var(--ink);
+  }
+  .est { font-size: 11px; letter-spacing: .18em; color: var(--ink-soft); }
+  h1 {
+    font-family: 'Fraunces', serif; font-weight: 300;
+    font-size: clamp(44px, 8vw, 92px);
+    line-height: 1.04; letter-spacing: -0.015em;
+    max-width: 12ch;
+  }
+  h1 em { font-style: italic; font-weight: 400; color: var(--gold); }
+  .sub {
+    margin-top: 22px; font-size: 15px; line-height: 1.7;
+    color: var(--ink-soft); max-width: 42ch;
+  }
+  .cta-row { margin-top: 40px; display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
+  .cta {
+    display: inline-block; text-decoration: none;
+    font-size: 13px; letter-spacing: .14em; text-transform: uppercase;
+    padding: 16px 34px; border-radius: 999px;
+    background: var(--ink); color: var(--cream);
+    transition: transform .35s ease, background .35s ease;
+  }
+  .cta:hover { transform: translateY(-2px); background: #2b221b; }
+  .cta.ghost {
+    background: transparent; color: var(--ink);
+    border: 1px solid rgba(61,49,40,.28);
+  }
+  .cta.ghost:hover { background: rgba(61,49,40,.06); }
+  footer {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 24px 36px; font-size: 12px; color: var(--ink-soft);
+    letter-spacing: .06em;
+  }
+  footer a { color: var(--ink-soft); text-decoration: none; border-bottom: 1px solid rgba(122,106,90,.35); }
+  .fade { opacity: 0; transform: translateY(14px); animation: rise 1.1s ease forwards; }
+  .fade.d1 { animation-delay: .15s } .fade.d2 { animation-delay: .35s }
+  .fade.d3 { animation-delay: .55s } .fade.d4 { animation-delay: .75s }
+  @keyframes rise { to { opacity: 1; transform: none } }
+  @media (max-width: 600px) {
+    header, footer { padding: 20px 20px; }
+    footer { font-size: 11px; }
+    .est { display: none; }
+  }
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+<div class="veil"></div>
+
+<header class="fade d1">
+  <div class="mark">SOHOCOZY</div>
+  <div class="est">EST. 2026 · NEW YORK STATE OF MIND</div>
+</header>
+
+<main>
+  <h1 class="fade d2">Cozy is a <em>lifestyle</em>.</h1>
+  <p class="sub fade d3">A small boutique of soft things — shirts and crop tops in colors that feel like golden hour, made one at a time, for every one of us.</p>
+  <div class="cta-row fade d4">
+    <a class="cta" href="https://www.etsy.com/shop/SohoCozy">Shop the collection</a>
+    <a class="cta ghost" href="mailto:shop@sohocozystore.com">Say hello</a>
+  </div>
+</main>
+
+<footer class="fade d4">
+  <span>© 2026 Soho Cozy</span>
+  <a href="mailto:shop@sohocozystore.com">shop@sohocozystore.com</a>
+</footer>
+
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+const canvas = document.getElementById('scene');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0xf6efe6, 8, 20);
+
+const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 60);
+camera.position.set(0, 0.2, 7);
+
+scene.add(new THREE.AmbientLight(0xfff2e0, 0.9));
+const sun = new THREE.DirectionalLight(0xffd9a6, 1.6);
+sun.position.set(4, 5, 3);
+scene.add(sun);
+const rim = new THREE.DirectionalLight(0xe8b4c8, 0.5);
+rim.position.set(-5, -2, 4);
+scene.add(rim);
+
+const silkGeo = new THREE.PlaneGeometry(18, 7, 160, 44);
+const silkMat = new THREE.MeshStandardMaterial({
+  color: 0xe9d3bd, roughness: 0.55, metalness: 0.08,
+  side: THREE.DoubleSide, transparent: true, opacity: 0.92,
+});
+const silk = new THREE.Mesh(silkGeo, silkMat);
+silk.rotation.x = -0.62;
+silk.position.y = -1.15;
+scene.add(silk);
+
+const silk2 = new THREE.Mesh(
+  silkGeo.clone(),
+  new THREE.MeshStandardMaterial({
+    color: 0xd9a98f, roughness: 0.6, metalness: 0.05,
+    side: THREE.DoubleSide, transparent: true, opacity: 0.45,
+  })
+);
+silk2.rotation.x = -0.5;
+silk2.position.set(0, 1.9, -2.5);
+scene.add(silk2);
+
+const basePos = silkGeo.attributes.position.array.slice();
+const basePos2 = silk2.geometry.attributes.position.array.slice();
+
+const dustGeo = new THREE.BufferGeometry();
+const N = 140;
+const dust = new Float32Array(N * 3);
+for (let i = 0; i < N; i++) {
+  dust[i*3]   = (Math.random() - 0.5) * 16;
+  dust[i*3+1] = (Math.random() - 0.5) * 8;
+  dust[i*3+2] = (Math.random() - 0.5) * 6 - 1;
+}
+dustGeo.setAttribute('position', new THREE.BufferAttribute(dust, 3));
+const dustPts = new THREE.Points(dustGeo, new THREE.PointsMaterial({
+  color: 0xb8865f, size: 0.035, transparent: true, opacity: 0.55, sizeAttenuation: true,
+}));
+scene.add(dustPts);
+
+let mx = 0, my = 0;
+addEventListener('pointermove', e => {
+  mx = (e.clientX / innerWidth - 0.5);
+  my = (e.clientY / innerHeight - 0.5);
+});
+
+function wave(geo, base, t, amp, speed) {
+  const p = geo.attributes.position.array;
+  for (let i = 0; i < p.length; i += 3) {
+    const x = base[i], y = base[i+1];
+    p[i+2] = Math.sin(x * 0.55 + t * speed) * amp
+           + Math.sin(y * 1.35 + t * speed * 0.7) * amp * 0.5
+           + Math.sin((x + y) * 0.32 + t * speed * 0.45) * amp * 0.6;
+  }
+  geo.attributes.position.needsUpdate = true;
+  geo.computeVertexNormals();
+}
+
+function resize() {
+  const w = innerWidth, h = innerHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize);
+resize();
+
+const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const clock = new THREE.Clock();
+
+function frame() {
+  const t = clock.getElapsedTime();
+  wave(silkGeo, basePos, t, 0.34, 0.7);
+  wave(silk2.geometry, basePos2, t + 4, 0.28, 0.5);
+  const dp = dustGeo.attributes.position.array;
+  for (let i = 0; i < N; i++) {
+    dp[i*3+1] += Math.sin(t * 0.4 + i) * 0.0012;
+    dp[i*3]   += Math.cos(t * 0.3 + i * 0.7) * 0.0009;
+  }
+  dustGeo.attributes.position.needsUpdate = true;
+  camera.position.x += (mx * 0.6 - camera.position.x) * 0.04;
+  camera.position.y += (-my * 0.4 + 0.2 - camera.position.y) * 0.04;
+  camera.lookAt(0, 0, 0);
+  renderer.render(scene, camera);
+  if (!still) requestAnimationFrame(frame);
+}
+frame();
+if (still) renderer.render(scene, camera);
+</script>
+</body>
+</html>

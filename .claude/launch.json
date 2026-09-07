@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "sohocozy",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "4173", "-d", "/Users/poetlemar/Projects/sohocozy-website"],
+      "port": 4173
+    }
+  ]
+}
