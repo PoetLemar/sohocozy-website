@@ -41,11 +41,7 @@
     display: flex; justify-content: space-between; align-items: center;
     padding: 26px 36px;
   }
-  .mark {
-    font-family: 'Fraunces', serif; font-weight: 500;
-    letter-spacing: .42em; font-size: 14px; text-indent: .42em;
-    color: var(--ink);
-  }
+  .mark-img { width: 200px; height: auto; display: block; }
   .wink { font-size: 11px; letter-spacing: .18em; color: var(--ink-soft); font-style: italic; font-family: 'Fraunces', serif; }
   .hero {
     position: relative; z-index: 2;
@@ -136,6 +132,7 @@
   @media (max-width: 600px) {
     header, footer { padding: 20px 20px; }
     .wink { display: none; }
+    .mark-img { width: 160px; }
   }
 </style>
 </head>
@@ -144,7 +141,7 @@
 <div class="veil"></div>
 
 <header class="fade d1">
-  <div class="mark">SOHOCOZY</div>
+  <img class="mark-img" src="assets/wordmark.png" alt="SOHOCOZY">
   <div class="wink">a SoHo state of soft</div>
 </header>
 
