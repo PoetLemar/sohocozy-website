@@ -6,8 +6,10 @@ static_sites:
       repo_clone_url: https://github.com/PoetLemar/sohocozy-website.git
       branch: main
     source_dir: /
+    environment_slug: html
+    build_command: mkdir -p dist && cp index.html elements.js dist/ && cp -R assets dist/
+    output_dir: dist
     index_document: index.html
-    error_document: index.html
 domains:
   - domain: sohocozystore.com
     type: PRIMARY
