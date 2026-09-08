@@ -34,6 +34,7 @@
   .hero-video {
     position: fixed; top: 0; left: 50%; transform: translateX(-50%);
     z-index: 0; height: min(88svh, 100vw); width: auto;
+    filter: saturate(1.3) contrast(1.05);
   }
   #scene { position: fixed; inset: 0; display: block; z-index: 1; }
   .veil {
@@ -45,7 +46,18 @@
     display: flex; flex-direction: column; justify-content: center; align-items: center;
     gap: 8px; padding: 24px 20px 0;
   }
-  .mark-img { width: min(1200px, 88vw); height: auto; display: block; }
+  .mark-img {
+    width: min(1200px, 88vw); aspect-ratio: 1000 / 69;
+    -webkit-mask: url('assets/wordmark.png') center / contain no-repeat;
+    mask: url('assets/wordmark.png') center / contain no-repeat;
+    background: linear-gradient(105deg, var(--ink) 40%, #c89a68 50%, #e8c896 52%, var(--ink) 62%) 0 0 / 300% 100%;
+    animation: shimmer 4.5s ease-in-out infinite;
+  }
+  @keyframes shimmer {
+    0% { background-position: 140% 0; }
+    60%, 100% { background-position: -160% 0; }
+  }
+  @media (prefers-reduced-motion: reduce) { .mark-img { animation: none; background: var(--ink); } }
   .wink { font-size: 11px; letter-spacing: .18em; color: var(--ink-soft); font-style: italic; font-family: 'Fraunces', serif; }
   .hero {
     position: relative; z-index: 3;
@@ -145,7 +157,7 @@
 <div class="veil"></div>
 
 <header class="fade d1">
-  <img class="mark-img" src="assets/wordmark.png" alt="SOHOCOZY">
+  <div class="mark-img" role="img" aria-label="SOHOCOZY"></div>
   <div class="wink">a SoHo state of soft</div>
 </header>
 
