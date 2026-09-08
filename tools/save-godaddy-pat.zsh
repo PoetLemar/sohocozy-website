@@ -1,6 +1,8 @@
 #!/bin/zsh
 # Save a scoped GoDaddy Personal Access Token in macOS Keychain and verify it.
 set -euo pipefail
+set +x
+umask 077
 
 DOMAIN="sohocozystore.com"
 KEYCHAIN_SERVICE="sohocozy.godaddy.pat"
@@ -13,25 +15,19 @@ print -- "Required scopes: domains.domain:read and domains.nameserver:update"
 read -rs "PAT?token: "
 print ""
 
-if [[ -z "$PAT" ]]; then
-  print -u2 -- "Nothing saved: a token is required."
+if [[ -z "$PAT" || ! "$PAT" =~ '^[A-Za-z0-9._~+/-]+=*$' ]]; then
+  print -u2 -- "Nothing saved: a single valid bearer token is required."
   exit 1
 fi
 
-security add-generic-password \
-  -U \
-  -a "$KEYCHAIN_ACCOUNT" \
-  -s "$KEYCHAIN_SERVICE" \
-  -w "$PAT" >/dev/null
-
 HEADER_FILE="$WORK_DIR/headers"
 RESPONSE_FILE="$WORK_DIR/domain.json"
-chmod 600 "$WORK_DIR"
+chmod 700 "$WORK_DIR"
 print -r -- "Authorization: Bearer $PAT" > "$HEADER_FILE"
 chmod 600 "$HEADER_FILE"
-unset PAT
 
-HTTP_CODE=$(curl --silent --show-error \
+HTTP_CODE=$(curl --disable --silent --show-error \
+  --proto '=https' --connect-timeout 15 --max-time 45 \
   --header "@$HEADER_FILE" \
   --header "Accept: application/json" \
   --output "$RESPONSE_FILE" \
@@ -44,6 +40,27 @@ if [[ "$HTTP_CODE" != "200" ]]; then
   exit 1
 fi
 
-/usr/bin/python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print("Verified domain:", d.get("domain") or d.get("domainName") or sys.argv[2]); print("Current nameservers:", ", ".join(d.get("nameServers", [])))' "$RESPONSE_FILE" "$DOMAIN"
-print -- "Token saved in macOS Keychain service: $KEYCHAIN_SERVICE"
+/usr/bin/python3 -c '
+import json,re,sys
+d=json.load(open(sys.argv[1]))
+if not isinstance(d,dict) or d.get("domain",d.get("domainName","")).lower().rstrip(".") != sys.argv[2]:
+    raise SystemExit("Nothing saved: GoDaddy returned a different or missing domain.")
+ns=d.get("nameServers")
+host=re.compile(r"(?=.{1,253}$)(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z0-9-]+\.?$")
+if not isinstance(ns,list) or not 2 <= len(ns) <= 13 or any(not isinstance(n,str) or not host.fullmatch(n) for n in ns):
+    raise SystemExit("Nothing saved: invalid or missing nameservers in the domain response.")
+print("Verified domain:",sys.argv[2])
+print("Current nameservers:",", ".join(ns))
+' "$RESPONSE_FILE" "$DOMAIN"
 
+# Supply the secret on stdin, keeping it out of process arguments. Only save
+# after the token has successfully read this exact domain.
+printf 'add-generic-password -U -a "%s" -s "%s" -w "%s"\n' \
+  "$KEYCHAIN_ACCOUNT" "$KEYCHAIN_SERVICE" "$PAT" | security -i >/dev/null
+SAVED_PAT=$(security find-generic-password -a "$KEYCHAIN_ACCOUNT" -s "$KEYCHAIN_SERVICE" -w)
+if [[ "$SAVED_PAT" != "$PAT" ]]; then
+  print -u2 -- "Keychain did not retain the verified token."
+  exit 1
+fi
+unset PAT SAVED_PAT
+print -- "Token saved in macOS Keychain service: $KEYCHAIN_SERVICE"
