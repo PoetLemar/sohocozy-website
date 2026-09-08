@@ -30,11 +30,15 @@
     font-family: 'Poppins', system-ui, sans-serif;
     background: var(--cream);
     color: var(--ink);
+    overflow-x: hidden;
   }
   .hero-video {
     position: fixed; top: 0; left: 50%; transform: translateX(-50%);
-    z-index: 0; height: min(88svh, 100vw); width: auto;
+    z-index: 0; height: min(100svh, 100vw); width: auto;
     filter: saturate(1.3) contrast(1.05);
+  }
+  @media (min-aspect-ratio: 4/3) {
+    .hero-video { height: 100svh; }
   }
   #scene { position: fixed; inset: 0; display: block; z-index: 1; }
   .veil {
