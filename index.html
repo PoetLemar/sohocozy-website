@@ -35,13 +35,29 @@
   .hero-video {
     position: fixed; top: 0; left: 50%; transform: translateX(-50%);
     z-index: 0; height: min(100svh, 100vw); width: auto;
-    filter: saturate(1.3) contrast(1.05);
+    filter: saturate(1.3) contrast(1.05) brightness(var(--vid-b, 1));
   }
   #scene { position: fixed; inset: 0; display: block; z-index: 1; }
   .veil {
     position: fixed; inset: 0; pointer-events: none; z-index: 2;
-    background: radial-gradient(ellipse at 50% 42%, transparent 40%, rgba(246,239,230,.55) 100%);
+    background: radial-gradient(ellipse at 50% 42%, transparent 40%, var(--veil, rgba(246,239,230,.55)) 100%);
   }
+  .loom { position: fixed; top: 0; left: 0; width: 100%; height: 14px; z-index: 12; cursor: pointer; display: block; }
+  .dock-wrap { position: fixed; right: 14px; bottom: 12px; z-index: 12; text-align: center; }
+  .dock { width: 210px; height: 80px; display: block; }
+  @media (max-width: 600px) { .dock { width: 150px; height: 60px; } }
+  .dock-label { font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase; color: var(--ink-soft); height: 14px; margin-top: 2px; }
+  .whisper {
+    position: fixed; left: 50%; bottom: 112px; transform: translateX(-50%); z-index: 20;
+    background: var(--bone); color: var(--ink); padding: 14px 22px; border-radius: 999px;
+    font-size: 13px; box-shadow: 0 10px 30px rgba(0,0,0,.12); max-width: 90vw; text-align: center;
+  }
+  .whisper a { color: var(--clay); text-decoration: none; border-bottom: 1px solid currentColor; margin-left: 8px; }
+  .cta.knit { position: relative; background: transparent; overflow: hidden; }
+  .cta.knit:hover { background: transparent; }
+  .cta.knit canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
+  .cta.knit span { position: relative; z-index: 1; }
+  .spin { width: 100%; max-width: 200px; height: 150px; display: block; touch-action: none; cursor: grab; }
   header {
     position: fixed; top: 0; left: 0; right: 0; z-index: 10;
     display: flex; flex-direction: column; justify-content: center; align-items: center;
@@ -65,7 +81,7 @@
     min-height: 100vh; min-height: 100svh;
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
-    text-align: center; padding: clamp(150px, 18vw, 210px) 24px 60px;
+    text-align: center; padding: clamp(130px, 14vw, 190px) 24px 190px;
   }
   h1 {
     font-family: 'Fraunces', serif; font-weight: 300;
@@ -158,12 +174,45 @@
     }
     .hero {
       align-items: flex-start; text-align: left;
-      padding-left: clamp(48px, 9vw, 170px); padding-right: 48vw;
+      padding-left: clamp(48px, 9vw, 170px); padding-right: 48vw; padding-bottom: 150px;
     }
     .hero h1 { max-width: 11ch; }
     .sub { max-width: 42ch; }
     .cta-row { justify-content: flex-start; }
     .scroll-hint { align-self: flex-start; }
+  }
+  @media (min-width: 2200px) {
+    header { padding-top: 1.1vw; gap: 0.36vw; }
+    .wink { font-size: 0.5vw; }
+    .hero { padding-top: 9.5vw; padding-bottom: 6.8vw; }
+    h1 { font-size: 4vw; }
+    .sub { font-size: 0.68vw; margin-top: 1vw; }
+    .cta { font-size: 0.59vw; padding: 0.73vw 1.55vw; }
+    .cta-row { margin-top: 1.7vw; gap: 0.64vw; }
+    .scroll-hint { font-size: 0.5vw; margin-top: 2.5vw; }
+    .loom { height: 0.64vw; }
+    .dock-wrap { right: 0.64vw; bottom: 0.55vw; }
+    .dock { width: 9.5vw; height: 3.6vw; }
+    .dock-label { font-size: 0.48vw; height: 0.64vw; }
+    .whisper { font-size: 0.6vw; padding: 0.64vw 1vw; bottom: 5vw; }
+    .collection { padding: 4.1vw 1.1vw 2.7vw; }
+    .kicker { font-size: 0.5vw; }
+    h2.sect { font-size: 2.18vw; margin-top: 0.55vw; }
+    .sect-sub { font-size: 0.64vw; margin-top: 0.55vw; }
+    .grid { max-width: 46.9vw; gap: 1vw; margin-top: 2.5vw; }
+    .piece { border-radius: 0.8vw; }
+    .piece .art { padding: 1.5vw 1.4vw 1vw; }
+    .spin { height: 6.8vw; max-width: 9.1vw; }
+    .piece .meta { padding: 0 1.1vw 1.2vw; }
+    .piece h3 { font-size: 0.86vw; }
+    .piece p { font-size: 0.57vw; margin-top: 0.27vw; }
+    .tag { font-size: 0.48vw; padding: 0.27vw 0.64vw; margin-top: 0.55vw; }
+    .waitlist { padding: 4.1vw 1.1vw 4.5vw; }
+    .waitlist-inner { max-width: 25.5vw; }
+    .wl-form { margin-top: 1.5vw; gap: 0.45vw; }
+    .wl-form input[type=email] { font-size: 0.64vw; padding: 0.68vw 1vw; min-width: 11vw; }
+    .fine { font-size: 0.52vw; margin-top: 0.73vw; }
+    footer { font-size: 0.55vw; padding: 1.2vw 1.6vw; }
   }
 </style>
 </head>
@@ -171,6 +220,9 @@
 <video class="hero-video" autoplay muted loop playsinline poster="assets/logo-hero.png" src="assets/logo-motion.mp4" aria-label="SOHOCOZY moving logo — a potted plant before a terracotta sun"></video>
 <canvas id="scene"></canvas>
 <div class="veil"></div>
+<canvas class="loom" aria-label="Scroll progress loom"></canvas>
+<div class="dock-wrap"><canvas class="dock" aria-label="Flower navigation: shop, waitlist, email"></canvas><div class="dock-label"></div></div>
+<div id="whisper" class="whisper" hidden><span></span><a href="#waitlist">Join the soft list</a></div>
 
 <header class="fade d1">
   <div class="mark-img" role="img" aria-label="SOHOCOZY"></div>
@@ -181,7 +233,7 @@
   <h1 class="fade d2">The garments <br>of <em>calm</em>.</h1>
   <p class="sub fade d3">Boxy crops and crew sweats in earth tones — soft enough for Sunday, spooky enough for October. Made one at a time, never in a hurry.</p>
   <div class="cta-row fade d4">
-    <a class="cta" href="https://www.etsy.com/shop/SohoCozy">Shop the collection</a>
+    <a class="cta knit" href="https://www.etsy.com/shop/SohoCozy"><canvas class="knit-canvas" aria-hidden="true"></canvas><span>Shop the collection</span></a>
     <a class="cta ghost" href="#waitlist">Join the waitlist</a>
   </div>
   <div class="scroll-hint fade d4">↓ the first drop</div>
@@ -194,11 +246,7 @@
   <div class="grid">
 
     <div class="piece">
-      <div class="art"><svg viewBox="0 0 190 150" aria-label="Boxy crop tee in moss with the SOHOCOZY logo chest print">
-        <path d="M55 30 L78 20 Q95 28 112 20 L135 30 L158 52 L140 68 L134 58 L134 108 L56 108 L56 58 L50 68 L32 52 Z" fill="#7d8263"/>
-        <rect x="64" y="40" width="62" height="62" rx="6" fill="#ece3d3"/>
-        <image href="assets/logo-chest.png" x="66" y="42" width="58" height="58"/>
-      </svg></div>
+      <div class="art"><canvas class="spin" data-garment="crop" data-color="#7d8263" data-decal="logo" data-patch="1" aria-label="Boxy crop tee in moss with the SOHOCOZY logo — drag to spin"></canvas></div>
       <div class="meta">
         <h3>Terracotta Sun Crop</h3>
         <p>Boxy crop tee · moss · the house mark, front and center</p>
@@ -207,12 +255,7 @@
     </div>
 
     <div class="piece">
-      <div class="art"><svg viewBox="0 0 190 150" aria-label="Crew sweatshirt in bone with the SOHOCOZY logo chest print">
-        <path d="M52 34 L76 24 Q95 32 114 24 L138 34 L162 60 L142 74 L138 62 L138 118 L52 118 L52 62 L48 74 L28 60 Z" fill="#fbf7ef" stroke="#d9cdb6" stroke-width="1.5"/>
-        <rect x="53" y="110" width="84" height="8" fill="#e6dcc6"/>
-        <path d="M83 24 Q95 34 107 24" fill="none" stroke="#e6dcc6" stroke-width="5"/>
-        <image href="assets/logo-chest.png" x="63" y="44" width="64" height="64"/>
-      </svg></div>
+      <div class="art"><canvas class="spin" data-garment="crew" data-color="#fbf7ef" data-decal="logo" aria-label="Crew sweatshirt in bone with the SOHOCOZY logo — drag to spin"></canvas></div>
       <div class="meta">
         <h3>The SOHOCOZY Crew</h3>
         <p>Crew-neck sweat · bone · the logo piece every house needs</p>
@@ -221,16 +264,7 @@
     </div>
 
     <div class="piece">
-      <div class="art"><svg viewBox="0 0 190 150" aria-label="Boxy crop tee in clay">
-        <path d="M55 30 L78 20 Q95 28 112 20 L135 30 L158 52 L140 68 L134 58 L134 108 L56 108 L56 58 L50 68 L32 52 Z" fill="#b47a5c"/>
-        <g stroke="#f3e6d5" stroke-width="2" fill="none" stroke-linecap="round">
-          <ellipse cx="95" cy="72" rx="17" ry="21"/>
-          <path d="M95 51 L95 40"/><path d="M87 54 L81 45"/><path d="M103 54 L109 45"/>
-          <path d="M88 66 Q95 60 102 66"/>
-          <circle cx="89" cy="74" r="2" fill="#f3e6d5"/><circle cx="101" cy="74" r="2" fill="#f3e6d5"/>
-          <path d="M89 84 Q95 89 101 84"/>
-        </g>
-      </svg></div>
+      <div class="art"><canvas class="spin" data-garment="crop" data-color="#b47a5c" data-decal="ghost" aria-label="Boxy crop tee in clay — drag to spin"></canvas></div>
       <div class="meta">
         <h3>Golden Hour Ghost</h3>
         <p>Boxy crop tee · clay · the friendliest haunting in earth tones</p>
@@ -239,19 +273,7 @@
     </div>
 
     <div class="piece">
-      <div class="art"><svg viewBox="0 0 190 150" aria-label="Crew sweatshirt in sand">
-        <path d="M52 34 L76 24 Q95 32 114 24 L138 34 L162 60 L142 74 L138 62 L138 118 L52 118 L52 62 L48 74 L28 60 Z" fill="#d9c4a5"/>
-        <rect x="52" y="110" width="86" height="8" fill="#c9b28f"/>
-        <path d="M83 24 Q95 34 107 24" fill="none" stroke="#c9b28f" stroke-width="5"/>
-        <g stroke="#565b41" stroke-width="2" fill="none" stroke-linecap="round">
-          <path d="M95 52 L95 100"/>
-          <path d="M95 62 Q83 60 78 50"/><path d="M95 62 Q107 60 112 50"/>
-          <path d="M95 76 Q81 74 76 64"/><path d="M95 76 Q109 74 114 64"/>
-          <path d="M95 90 Q84 89 80 81"/><path d="M95 90 Q106 89 110 81"/>
-          <circle cx="95" cy="46" r="5" fill="none"/>
-          <path d="M91 44 L93 46"/><path d="M99 44 L97 46"/>
-        </g>
-      </svg></div>
+      <div class="art"><canvas class="spin" data-garment="crew" data-color="#d9c4a5" data-decal="fern" aria-label="Crew sweatshirt in sand — drag to spin"></canvas></div>
       <div class="meta">
         <h3>Moss &amp; Marrow Crew</h3>
         <p>Crew-neck sweat · sand · botanical bones for spooky season</p>
@@ -282,7 +304,7 @@
 <footer>
   <span>© 2026 SOHOCOZY</span>
   <span class="wink">the garments of calm</span>
-  <a href="mailto:shop@sohocozystore.com">shop@sohocozystore.com</a>
+  <a href="#" data-copy-email title="Copy our email address">shop@sohocozystore.com</a>
 </footer>
 
 <script type="importmap">
@@ -306,7 +328,8 @@ scene.fog = new THREE.Fog(0xf6efe6, 8, 20);
 const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 60);
 camera.position.set(0, 0.2, 7);
 
-scene.add(new THREE.AmbientLight(0xfff2e0, 0.9));
+const ambient = new THREE.AmbientLight(0xfff2e0, 0.9);
+scene.add(ambient);
 const sun = new THREE.DirectionalLight(0xffd9a6, 1.6);
 sun.position.set(4, 5, 3);
 scene.add(sun);
@@ -387,9 +410,11 @@ resize();
 
 const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const clock = new THREE.Clock();
+window.SC = { scene, camera, renderer, silk, silk2, silkMat, sun, rim, ambient, ticks: [] };
 
 function frame() {
   const t = clock.getElapsedTime();
+  for (const f of SC.ticks) f(t);
   wave(silkGeo, basePos, t, 0.34, 0.7);
   wave(silk2.geometry, basePos2, t + 4, 0.28, 0.5);
   const dp = dustGeo.attributes.position.array;
@@ -407,5 +432,6 @@ function frame() {
 frame();
 if (still) renderer.render(scene, camera);
 </script>
+<script type="module" src="elements.js"></script>
 </body>
 </html>
