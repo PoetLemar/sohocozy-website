@@ -13,5 +13,7 @@ static_sites:
 domains:
   - domain: sohocozystore.com
     type: PRIMARY
+    zone: sohocozystore.com
   - domain: www.sohocozystore.com
     type: ALIAS
+    zone: sohocozystore.com
