@@ -34,6 +34,26 @@ function copyEmail() {
 }
 document.querySelectorAll('a[data-copy-email]').forEach(a => a.addEventListener('click', (e) => { e.preventDefault(); copyEmail(); }));
 
+/* Autoplay is silently deferred by some browsers (background tab at load, iOS
+   low-power mode). Left alone the hero freezes on a near-empty opening frame,
+   so keep nudging it, and park on a composed frame if it truly cannot play. */
+(function keepHeroPlaying() {
+  const v = document.querySelector('.hero-video');
+  if (!v || reduced) return;
+  const kick = () => { if (v.paused) v.play().catch(() => {}); };
+  kick();
+  v.addEventListener('loadeddata', kick);
+  v.addEventListener('canplay', kick);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) kick(); });
+  ['pointerdown', 'touchstart', 'keydown', 'scroll'].forEach(ev =>
+    addEventListener(ev, kick, { passive: true }));
+  setTimeout(() => {
+    if (v.paused && v.readyState >= 2 && v.currentTime < 0.5) {
+      try { v.currentTime = Math.min(2.2, (v.duration || 3) * 0.25); } catch {}
+    }
+  }, 1200);
+})();
+
 /* ---------- palette + dusk state ---------- */
 const PALETTES = {
   golden: { silk: 0xdcc7a8, silk2: 0x8d926f, clay: '#b47a5c', label: 'golden hour' },
