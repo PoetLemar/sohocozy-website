@@ -133,16 +133,17 @@ stScene.add(swatches);
 const knob = new THREE.Group();
 const knobSpin = new THREE.Group();          // everything that rotates with the value
 knob.add(knobSpin);
+const BRASS = new THREE.MeshStandardMaterial({ color: 0x9c7f43, roughness: 0.38, metalness: 0.72 });
 const METAL = new THREE.MeshStandardMaterial({ color: 0x4a3a2e, roughness: 0.45, metalness: 0.55 });
 const BODY = new THREE.MeshStandardMaterial({ color: 0xd9c4a5, roughness: 0.55, metalness: 0.25 });
 const CAP = new THREE.MeshStandardMaterial({ color: 0xece3d3, roughness: 0.5, metalness: 0.15 });
 
-const bezel = new THREE.Mesh(new THREE.TorusGeometry(0.86, 0.055, 12, 48), METAL);
+const bezel = new THREE.Mesh(new THREE.TorusGeometry(0.86, 0.055, 12, 48), BRASS);
 knob.add(bezel);
 for (let i = 0; i <= 10; i++) {                // tick marks around the 270-degree sweep
   const a = -Math.PI * 0.75 + (i / 10) * Math.PI * 1.5;
   const major = i % 5 === 0;
-  const tick = new THREE.Mesh(new THREE.BoxGeometry(0.022, major ? 0.16 : 0.09, 0.03), METAL);
+  const tick = new THREE.Mesh(new THREE.BoxGeometry(0.022, major ? 0.16 : 0.09, 0.03), BRASS);
   tick.position.set(Math.sin(a) * 1.02, Math.cos(a) * 1.02, 0);
   tick.rotation.z = -a;
   knob.add(tick);
@@ -217,13 +218,15 @@ function stationLayout() {
   const halfH = 1.3, halfW = halfH * (w / h);
   stCam.left = -halfW; stCam.right = halfW; stCam.top = halfH; stCam.bottom = -halfH;
   stCam.updateProjectionMatrix();
-  const knobR = 1.16;
-  knob.position.set(halfW - knobR - 0.12, 0, 0);
-  yarn.position.set(-halfW + 0.62, 0, 0);
-  const swatchSpan = 3 * 0.56;
-  const gapStart = -halfW + 1.28;
-  const gapEnd = knob.position.x - knobR - 0.25;
-  swatches.position.set(Math.max(gapStart, (gapStart + gapEnd - swatchSpan) / 2), 0, 0);
+  // even-gap cluster: [yarn] g [swatches] g [knob], margins equal at both ends
+  const knobR = 1.16, yarnR = 0.55, swW = 3 * 0.56 + 0.46, margin = 0.22;
+  const gap = Math.max(0.35, (2 * halfW - 2 * margin - (yarnR * 2 + swW + knobR * 2)) / 2);
+  let x = -halfW + margin;
+  yarn.position.set(x + yarnR, 0, 0);
+  x += yarnR * 2 + gap;
+  swatches.position.set(x + 0.23, 0, 0);
+  x += swW + gap;
+  knob.position.set(x + knobR, 0, 0);
 }
 
 function stationPick(e) {
