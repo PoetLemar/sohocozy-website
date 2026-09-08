@@ -109,15 +109,24 @@ def read_json(path):
     return body
 
 
-def record_key(record):
+def record_identity(record):
+    if not isinstance(record, dict):
+        fail("Malformed DNS record; preflight stopped.")
     name = normalize_domain(record.get("name"))
     if name == DOMAIN:
         name = "@"
     elif name.endswith("." + DOMAIN):
         name = name[:-(len(DOMAIN) + 1)]
     kind = record.get("type", "").upper()
+    if not name or not kind:
+        fail("Malformed DNS record; preflight stopped.")
+    return name, kind
+
+
+def record_key(record):
+    name, kind = record_identity(record)
     value = record.get("data")
-    if not name or not isinstance(value, str) or not kind:
+    if not isinstance(value, str):
         fail("Malformed DNS record; preflight stopped.")
     if kind in {"CNAME", "MX", "NS"}:
         value = normalize_domain(value)
@@ -129,7 +138,9 @@ def record_key(record):
 
 
 def is_replaced(record):
-    name, kind = record_key(record)[:2]
+    # GoDaddy may use logical web values such as "WebsiteBuilder Site".
+    # Classify replaced records before parsing data; retain the raw snapshot.
+    name, kind = record_identity(record)
     # _domainconnect is GoDaddy-specific discovery, retained only in rollback.
     return (name == "@" and kind in {"NS", "SOA", "A", "AAAA"}) or (name in {"www", "*"} and kind in {"A", "AAAA", "CNAME"}) or (name == "_domainconnect" and kind == "CNAME")
 
