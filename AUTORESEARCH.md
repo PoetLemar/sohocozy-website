@@ -35,6 +35,8 @@ Experiment 001 observation at 03:58 UTC: apex TLS remained unavailable and WWW r
 
 Rollback deployment `da59289b` restored WWW HTTPS 200 at 03:59:36 UTC. Its source is `9ff14a2`, including Claude's latest hero-video playback correction. A fixed-address comparison against both official IPv4 ingress addresses then showed HTTP 301 to HTTPS for both hosts, WWW HTTPS 200, and apex TLS handshake failure. Local DNS selection cannot explain that comparison. Keep the restored configuration stable while the provider provisions the apex certificate; the existing bounded watcher synchronizes any new TXT proof and checks both real endpoints until 04:40 UTC or success. Do not start a duplicate watcher.
 
+Resolution observed at 04:04:59 UTC: both purchased-domain HTTPS pages and JavaScript returned 200, the apex certificate became active, and the watcher exited successfully. The provider completed provisioning while the restored configuration stayed unchanged. Final work is the bare-domain browser check and a starter-domain redirect to the purchased domain, followed by verification of both public endpoints. The prepared provider support draft was never sent and is no longer needed for this incident.
+
 Earlier attempts are preserved in private receipts: registrar cutover, automatic zone-management failures, one domain-registration reset, stale DNS observations, and certificate-proof updates. Do not repeat them without new evidence.
 
 ## Research basis, checked September 8, 2026

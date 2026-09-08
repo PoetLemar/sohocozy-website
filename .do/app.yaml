@@ -16,3 +16,15 @@ domains:
     wildcard: true
   - domain: www.sohocozystore.com
     type: ALIAS
+ingress:
+  rules:
+    - match:
+        authority:
+          exact: ${STARTER_DOMAIN}
+      redirect:
+        authority: sohocozystore.com
+    - match:
+        path:
+          prefix: /
+      component:
+        name: site
