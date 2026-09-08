@@ -96,7 +96,6 @@
   .hero-logo { width: clamp(240px, 38vw, 430px); height: auto; margin-bottom: 0; mix-blend-mode: multiply; border-radius: 24px; }
   section { position: relative; z-index: 3; background: var(--cream); }
   .collection { padding: 90px 24px 60px; background: var(--cream); }
-  .collection-inner { max-width: 1080px; margin: 0 auto; }
   .kicker { font-size: 11px; letter-spacing: .3em; text-transform: uppercase; color: var(--moss-deep); text-align: center; }
   h2.sect {
     font-family: 'Fraunces', serif; font-weight: 300; text-align: center;
@@ -104,7 +103,7 @@
   }
   .sect-sub { text-align: center; color: var(--ink-soft); font-size: 14px; margin-top: 12px; line-height: 1.7; }
   .grid {
-    margin-top: 54px; display: grid; gap: 22px;
+    margin: 54px auto 0; max-width: 1032px; display: grid; gap: 22px;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   }
   .piece {
