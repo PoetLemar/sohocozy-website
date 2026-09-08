@@ -89,11 +89,13 @@ if (stCanvas) {
   stRenderer = new THREE.WebGLRenderer({ canvas: stCanvas, alpha: true, antialias: true });
   stRenderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   const amb = new THREE.AmbientLight(0xfff4e6, 0.85);
-  const key = new THREE.DirectionalLight(0xfff0dc, 1.15);
-  key.position.set(-2, 3, 6);
+  const key = new THREE.DirectionalLight(0xfff0dc, 1.35);
+  key.position.set(-2.2, 3.4, 4.5);
   const fill = new THREE.DirectionalLight(0xc9cf9f, 0.35);
   fill.position.set(3, -2, 4);
-  stScene.add(amb, key, fill);
+  const rimL = new THREE.DirectionalLight(0xffe6bd, 0.5);   // rakes across the flutes
+  rimL.position.set(3.5, 0.6, 1.2);
+  stScene.add(amb, key, fill, rimL);
   stationLights = { amb, key, fill };
 }
 
@@ -138,37 +140,84 @@ const METAL = new THREE.MeshStandardMaterial({ color: 0x4a3a2e, roughness: 0.45,
 const BODY = new THREE.MeshStandardMaterial({ color: 0xd9c4a5, roughness: 0.55, metalness: 0.25 });
 const CAP = new THREE.MeshStandardMaterial({ color: 0xece3d3, roughness: 0.5, metalness: 0.15 });
 
-const bezel = new THREE.Mesh(new THREE.TorusGeometry(0.86, 0.055, 12, 48), BRASS);
-knob.add(bezel);
-for (let i = 0; i <= 10; i++) {                // tick marks around the 270-degree sweep
-  const a = -Math.PI * 0.75 + (i / 10) * Math.PI * 1.5;
+const BRASS_DARK = new THREE.MeshStandardMaterial({ color: 0x6b5527, roughness: 0.55, metalness: 0.6 });
+const PLATE = new THREE.MeshStandardMaterial({ color: 0xe9dfc9, roughness: 0.78, metalness: 0.04 });
+const GROOVE = new THREE.MeshStandardMaterial({ color: 0x5c4a35, roughness: 0.7, metalness: 0.2 });
+BRASS.color.setHex(0xa8873f); BRASS.roughness = 0.3; BRASS.metalness = 0.85;
+BODY.color.setHex(0xdfd0b4); BODY.roughness = 0.34; BODY.metalness = 0.08;
+CAP.color.setHex(0xf2ead9); CAP.roughness = 0.34; CAP.metalness = 0.08;
+
+// --- dial plate: ticks are engraved into it rather than floating ---
+const plate = new THREE.Mesh(new THREE.CircleGeometry(1.3, 64), PLATE);
+plate.position.z = -0.17;
+knob.add(plate);
+const plateRim = new THREE.Mesh(new THREE.TorusGeometry(1.29, 0.022, 10, 64), BRASS_DARK);
+plateRim.position.z = -0.16;
+knob.add(plateRim);
+for (let i = 0; i <= 20; i++) {                // 270-degree sweep, majors every 5th
+  const a = -Math.PI * 0.75 + (i / 20) * Math.PI * 1.5;
   const major = i % 5 === 0;
-  const tick = new THREE.Mesh(new THREE.BoxGeometry(0.022, major ? 0.16 : 0.09, 0.03), BRASS);
-  tick.position.set(Math.sin(a) * 1.02, Math.cos(a) * 1.02, 0);
+  const len = major ? 0.19 : 0.095;
+  const tick = new THREE.Mesh(new THREE.BoxGeometry(major ? 0.032 : 0.018, len, 0.018), major ? BRASS_DARK : GROOVE);
+  const rad = 1.13 - len / 2;
+  tick.position.set(Math.sin(a) * rad, Math.cos(a) * rad, -0.157);
   tick.rotation.z = -a;
   knob.add(tick);
 }
-const sunGlow = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.16, 48), new THREE.MeshBasicMaterial({ color: 0xffd9a6, transparent: true, opacity: 0.4, side: THREE.DoubleSide }));
+const sunGlow = new THREE.Mesh(new THREE.RingGeometry(0.92, 1.28, 64), new THREE.MeshBasicMaterial({ color: 0xffd9a6, transparent: true, opacity: 0.4, side: THREE.DoubleSide }));
+sunGlow.position.z = -0.165;
 knob.add(sunGlow);
+// contact shadow so the body sits ON the plate instead of hovering
+const contact = new THREE.Mesh(new THREE.RingGeometry(0.6, 0.9, 64), new THREE.MeshBasicMaterial({ color: 0x8a7551, transparent: true, opacity: 0.24, side: THREE.DoubleSide }));
+contact.position.z = -0.15;
+knob.add(contact);
 
-const body = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.68, 0.34, 48), BODY);
+const bezel = new THREE.Mesh(new THREE.TorusGeometry(0.855, 0.05, 14, 64), BRASS);
+knob.add(bezel);
+
+// --- fluted body: scallops cut into the cylinder itself, not stuck on ---
+const FLUTES = 20;
+const bodyGeo = new THREE.CylinderGeometry(0.60, 0.645, 0.4, FLUTES * 8, 1, false);
+{
+  const p = bodyGeo.attributes.position;
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i), z = p.getZ(i);
+    const r = Math.hypot(x, z);
+    if (r < 1e-4) continue;
+    const a = Math.atan2(z, x);
+    const scallop = Math.pow(Math.cos(a * FLUTES) * 0.5 + 0.5, 1.5);
+    const nr = r + 0.082 * scallop - 0.041;
+    p.setX(i, Math.cos(a) * nr);
+    p.setZ(i, Math.sin(a) * nr);
+  }
+  bodyGeo.computeVertexNormals();
+}
+const body = new THREE.Mesh(bodyGeo, BODY);
 body.rotation.x = Math.PI / 2;
 knobSpin.add(body);
-for (let i = 0; i < 28; i++) {                 // knurling
-  const a = (i / 28) * Math.PI * 2;
-  const rib = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.34, 0.05), METAL);
-  rib.position.set(Math.cos(a) * 0.65, Math.sin(a) * 0.65, 0);
-  rib.rotation.z = a;
-  knobSpin.add(rib);
-}
-const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.06, 40), CAP);
-cap.rotation.x = Math.PI / 2;
-cap.position.z = 0.18;
-knobSpin.add(cap);
-const pointer = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.4, 0.04), new THREE.MeshStandardMaterial({ color: 0x4a3a2e, roughness: 0.5 }));
-pointer.position.set(0, 0.24, 0.23);
-knobSpin.add(pointer);
 
+// --- bevel collar + domed crown, so light catches the top ---
+const collar = new THREE.Mesh(new THREE.CylinderGeometry(0.545, 0.60, 0.07, 64), BODY);
+collar.rotation.x = Math.PI / 2;
+collar.position.z = 0.17;
+knobSpin.add(collar);
+const DOME_R = 2.46, DOME_TH = Math.asin(0.545 / 2.46);
+const domeGeo = new THREE.SphereGeometry(DOME_R, 64, 12, 0, Math.PI * 2, 0, DOME_TH);
+domeGeo.translate(0, -DOME_R * Math.cos(DOME_TH), 0);   // base of the cap at y = 0
+const dome = new THREE.Mesh(domeGeo, CAP);
+dome.rotation.x = Math.PI / 2;
+dome.position.z = 0.2;
+knobSpin.add(dome);
+
+// --- recessed indicator: a cut groove with a brass inlay ---
+const groove = new THREE.Mesh(new THREE.BoxGeometry(0.082, 0.46, 0.05), GROOVE);
+groove.position.set(0, 0.235, 0.256);
+knobSpin.add(groove);
+const inlay = new THREE.Mesh(new THREE.BoxGeometry(0.038, 0.42, 0.034), BRASS);
+inlay.position.set(0, 0.235, 0.276);
+knobSpin.add(inlay);
+
+knob.rotation.x = -0.30;   // tip it off-axis so the fluted body and its shadow read
 const knobHit = new THREE.Mesh(new THREE.CircleGeometry(0.95, 16), new THREE.MeshBasicMaterial({ visible: false }));
 knobHit.position.z = 0.4;
 knobHit.userData = { drag: true, label: 'Dusk' };
@@ -189,11 +238,12 @@ function setKnob(angle) {
 /* Drop-in slot for the BlenderKit knob: if assets/knob.glb exists it replaces
    the procedural body, keeping the same rotation rig, hit area and behaviour. */
 async function tryLoadKnobModel() {
+  // opt-in: set data-knob="assets/knob.glb" on the station canvas to use a model
+  const url = stCanvas?.dataset.knob;
+  if (!url) return;
   try {
-    const head = await fetch('assets/knob.glb', { method: 'HEAD' });
-    if (!head.ok) return;
     const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
-    const gltf = await new GLTFLoader().loadAsync('assets/knob.glb');
+    const gltf = await new GLTFLoader().loadAsync(url);
     const model = gltf.scene;
     // A knob's rotation axis is its SHORTEST dimension; glTF's Y-up export
     // usually leaves that pointing at the ceiling. Turn it to face the camera.
