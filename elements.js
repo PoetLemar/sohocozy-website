@@ -5,7 +5,7 @@ if (!SC) throw new Error('main scene not exposed');
 const { scene, camera, renderer, silk, silk2, silkMat, sun, rim, ambient } = SC;
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const ETSY = 'https://www.etsy.com/shop/SohoCozy';
-const EMAIL = 'cozy@sohocozystore.com';
+const EMAIL = 'studio@sohocozystore.com';
 const ray = new THREE.Raycaster();
 const ndc = new THREE.Vector2();
 const heroHits = [];
