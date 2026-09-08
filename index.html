@@ -37,9 +37,6 @@
     z-index: 0; height: min(100svh, 100vw); width: auto;
     filter: saturate(1.3) contrast(1.05);
   }
-  @media (min-aspect-ratio: 4/3) {
-    .hero-video { height: 100svh; }
-  }
   #scene { position: fixed; inset: 0; display: block; z-index: 1; }
   .veil {
     position: fixed; inset: 0; pointer-events: none; z-index: 2;
@@ -152,6 +149,21 @@
   @media (max-width: 600px) {
     header, footer { padding: 20px 20px; }
     .wink { display: none; }
+  }
+  @media (min-aspect-ratio: 1/1) and (min-width: 820px) {
+    .hero-video {
+      left: auto; right: -6vw; transform: none; height: 100svh;
+      -webkit-mask-image: radial-gradient(ellipse 60% 60% at 50% 50%, #000 42%, transparent 74%);
+      mask-image: radial-gradient(ellipse 60% 60% at 50% 50%, #000 42%, transparent 74%);
+    }
+    .hero {
+      align-items: flex-start; text-align: left;
+      padding-left: clamp(48px, 9vw, 170px); padding-right: 48vw;
+    }
+    .hero h1 { max-width: 11ch; }
+    .sub { max-width: 42ch; }
+    .cta-row { justify-content: flex-start; }
+    .scroll-hint { align-self: flex-start; }
   }
 </style>
 </head>
@@ -363,6 +375,12 @@ function resize() {
   renderer.setSize(w, h, false);
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
+  const wide = camera.aspect > 1;
+  silk.position.y = wide ? -2.55 : -1.15;
+  silk.scale.set(1, wide ? 0.62 : 1, 1);
+  silkMat.opacity = wide ? 0.8 : 0.92;
+  silk2.position.y = wide ? 3.4 : 1.9;
+  silk2.material.opacity = wide ? 0.28 : 0.4;
 }
 addEventListener('resize', resize);
 resize();
