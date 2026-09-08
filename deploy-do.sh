@@ -37,9 +37,29 @@ else
   APP_ID=$(print -r -- "$CREATE_RESULT" | awk 'NR == 1 { print $1 }')
 fi
 
-INGRESS=$(doctl apps get "$APP_ID" --format DefaultIngress --no-header)
-curl --fail --silent --show-error --location \
-  --retry 5 --retry-delay 3 \
-  --output /dev/null "$INGRESS"
+print -- "DigitalOcean deployment completed for SOHOCOZY ($APP_ID)."
 
-print -- "SOHOCOZY is live at $INGRESS"
+CANONICAL_URL="https://sohocozystore.com"
+VERIFY_DIR=$(mktemp -d "${TMPDIR:-/tmp}/sohocozy-deploy-check.XXXXXX")
+trap 'rm -rf "$VERIFY_DIR"' EXIT
+
+# Exit 2 means the deployment completed, but the canonical site is not ready.
+# Keep TLS verification enabled: a pending certificate must not count as live.
+if ! HTTP_CODE=$(curl --disable --fail --silent --show-error \
+  --proto '=https' --connect-timeout 10 --max-time 30 \
+  --retry 3 --retry-delay 3 \
+  --output "$VERIFY_DIR/index.html" --write-out '%{http_code}' \
+  "$CANONICAL_URL"); then
+  print -u2 -- "Deployment succeeded; custom-domain readiness is not yet verified at $CANONICAL_URL. Check DNS and certificate provisioning."
+  exit 2
+fi
+
+if [[ "$HTTP_CODE" != "200" ]] \
+  || ! /usr/bin/grep -Fq '<title>SOHOCOZY — the garments of calm</title>' "$VERIFY_DIR/index.html" \
+  || ! /usr/bin/grep -Fq '<link rel="canonical" href="https://sohocozystore.com/">' "$VERIFY_DIR/index.html" \
+  || ! /usr/bin/grep -Fq '<script type="module" src="elements.js"></script>' "$VERIFY_DIR/index.html"; then
+  print -u2 -- "Deployment succeeded; $CANONICAL_URL did not return the expected SOHOCOZY HTML (HTTP $HTTP_CODE)."
+  exit 2
+fi
+
+print -- "SOHOCOZY is live over verified HTTPS at $CANONICAL_URL."
