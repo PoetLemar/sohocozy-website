@@ -39,6 +39,11 @@ fi
 
 print -- "DigitalOcean deployment completed for SOHOCOZY ($APP_ID)."
 
+if ! /usr/bin/python3 tools/sync-certificate-dns.py --app-id "$APP_ID"; then
+  print -u2 -- "Deployment succeeded; certificate DNS synchronization needs attention before HTTPS readiness can be verified."
+  exit 2
+fi
+
 CANONICAL_URL="https://sohocozystore.com"
 VERIFY_DIR=$(mktemp -d "${TMPDIR:-/tmp}/sohocozy-deploy-check.XXXXXX")
 trap 'rm -rf "$VERIFY_DIR"' EXIT
