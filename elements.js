@@ -284,6 +284,28 @@ if (SOLO === 'knob') {
   if (wrap) { wrap.style.left = '50%'; wrap.style.bottom = '50%'; wrap.style.transform = 'translate(-50%, 50%)'; }
 }
 
+/* Measure each control's true horizontal span once, at scale 1, so layout uses
+   real geometry (rings, threads and all) instead of hand-guessed radii. */
+let baseSpan = null;
+function measureBaseSpans() {
+  const span = (o) => {
+    const ps = o.scale.clone(), pp = o.position.clone();
+    o.scale.setScalar(1); o.position.set(0, 0, 0); o.updateMatrixWorld(true);
+    const bb = new THREE.Box3();
+    const tmp = new THREE.Box3();
+    o.traverse((c) => {                       // visible geometry only — hit
+      if (!c.isMesh && !c.isLine) return;     // volumes must not inflate layout
+      if (c.material && c.material.visible === false) return;
+      c.geometry.computeBoundingBox();
+      tmp.copy(c.geometry.boundingBox).applyMatrix4(c.matrixWorld);
+      bb.union(tmp);
+    });
+    o.scale.copy(ps); o.position.copy(pp); o.updateMatrixWorld(true);
+    return { min: bb.min.x, max: bb.max.x, w: bb.max.x - bb.min.x };
+  };
+  baseSpan = { knob: span(knob), yarn: span(yarn), sw: span(swatches) };
+}
+
 /* ---------- station layout + interaction ---------- */
 function stationLayout() {
   if (!stCanvas || !stRenderer) return;
@@ -293,16 +315,33 @@ function stationLayout() {
   const halfH = 1.3, halfW = halfH * (w / h);
   stCam.left = -halfW; stCam.right = halfW; stCam.top = halfH; stCam.bottom = -halfH;
   stCam.updateProjectionMatrix();
-  if (SOLO === 'knob') { knob.position.set(0, 0, 0); return; }
-  // even-gap cluster: [yarn] g [swatches] g [knob], margins equal at both ends
-  const knobR = 1.16, yarnR = 0.55, swW = 3 * 0.56 + 0.46, margin = 0.22;
-  const gap = Math.max(0.35, (2 * halfW - 2 * margin - (yarnR * 2 + swW + knobR * 2)) / 2);
+  if (SOLO === 'knob') { knob.position.set(0, 0, 0); knob.scale.setScalar(1); return; }
+  // relative sizes, tuned so the three controls read as one even family
+  const KNOB_S = 0.80, YARN_S = 1.62, SW_S = 1.24;
+  const margin = 0.2, minGap = 0.3;
+  if (!baseSpan) measureBaseSpans();
+
+  // shrink the whole cluster if it cannot fit, rather than letting it overflow
+  const rawContent = baseSpan.knob.w * KNOB_S + baseSpan.yarn.w * YARN_S + baseSpan.sw.w * SW_S;
+  const avail = 2 * halfW - 2 * margin;
+  const fit = Math.min(1, (avail - 2 * minGap) / rawContent);
+
+  const kS = KNOB_S * fit, yS = YARN_S * fit, sS = SW_S * fit;
+  knob.userData.baseScale = kS;               // the tick multiplies hover onto this
+  knob.scale.setScalar(kS);
+  yarn.scale.setScalar(yS);
+  swatches.scale.setScalar(sS);
+
+  const wY = baseSpan.yarn.w * yS, wS = baseSpan.sw.w * sS, wK = baseSpan.knob.w * kS;
+  const gap = Math.max(minGap, (avail - (wY + wS + wK)) / 2);
   let x = -halfW + margin;
-  yarn.position.set(x + yarnR, 0, 0);
-  x += yarnR * 2 + gap;
-  swatches.position.set(x + 0.23, 0, 0);
-  x += swW + gap;
-  knob.position.set(x + knobR, 0, 0);
+  yarn.position.x = x - baseSpan.yarn.min * yS;          // left edge lands on x
+  x += wY + gap;
+  swatches.position.x = x - baseSpan.sw.min * sS;
+  x += wS + gap;
+  knob.position.x = x - baseSpan.knob.min * kS;
+  yarn.position.y = swatches.position.y = knob.position.y = 0;
+  yarn.position.z = swatches.position.z = knob.position.z = 0;
 }
 
 function stationPick(e) {
@@ -486,7 +525,7 @@ SC.ticks.push((t) => {
 
   sunGlow.material.opacity = 0.42 * (1 - dusk) + 0.08;
   sunGlow.material.color.setHex(dusk > 0.5 ? 0x9a86c9 : 0xffd9a6);
-  knob.scale.setScalar(stHover === knobHit || dragging ? 1.05 : 1);
+  knob.scale.setScalar((knob.userData.baseScale || 1) * (stHover === knobHit || dragging ? 1.05 : 1));
   if (stRenderer) stRenderer.render(stScene, stCam);
 
   /* hero: hang-tag */
