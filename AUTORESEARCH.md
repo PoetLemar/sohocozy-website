@@ -31,6 +31,8 @@ At 03:53 UTC September 8, `www.sohocozystore.com` served the latest saved build 
 
 Experiment 001: remove only `wildcard: true` from the apex app-domain specification. Hypothesis: an unnecessary wildcard request is complicating certificate issuance; exact apex plus WWW coverage is sufficient. DigitalOcean accepted the proposed configuration before application. Keep both domain entries, existing DNS, and the working WWW route. Success requires actual apex HTTPS plus an unchanged working WWW endpoint. This hypothesis is not established until observed.
 
+Experiment 001 observation at 03:58 UTC: apex TLS remained unavailable and WWW regressed to HTTP 409 / Cloudflare error 1001 after deployment `c264c1a6`. Restore the prior wildcard setting and measure again. This rejects the candidate for readiness; it does not yet establish the cause of the WWW regression.
+
 Earlier attempts are preserved in private receipts: registrar cutover, automatic zone-management failures, one domain-registration reset, stale DNS observations, and certificate-proof updates. Do not repeat them without new evidence.
 
 ## Research basis, checked September 8, 2026
