@@ -13,5 +13,6 @@ static_sites:
 domains:
   - domain: sohocozystore.com
     type: PRIMARY
+    wildcard: true
   - domain: www.sohocozystore.com
     type: ALIAS
