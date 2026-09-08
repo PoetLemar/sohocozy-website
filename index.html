@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SOHOCOZY — the garments of calm</title>
-<meta name="description" content="SOHOCOZY — the garments of calm. Boxy crops and crew sweats in earth tones, spooky-botanical prints, made one at a time.">
+<meta name="description" content="SOHOCOZY — therapeutic fashion in earth tones. Where tranquility meets threads: boxy crops and crew sweats with spooky-botanical prints, made one at a time.">
 <meta name="theme-color" content="#f6efe6">
 <link rel="canonical" href="https://sohocozystore.com/">
 <link rel="icon" type="image/png" href="assets/favicon.png">
 <meta property="og:title" content="SOHOCOZY — the garments of calm">
-<meta property="og:description" content="Boxy crops and crew sweats in earth tones, spooky-botanical prints, made one at a time.">
+<meta property="og:description" content="Therapeutic fashion in earth tones. Where tranquility meets threads — boxy crops and crew sweats, made one at a time.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://sohocozystore.com/">
 <meta property="og:image" content="https://sohocozystore.com/assets/og-logo.png">
@@ -27,6 +27,8 @@
     --moss: #7d8263;
     --moss-deep: #565b41;
     --clay: #b47a5c;
+    --burnt: #b65012;      /* sampled from the moving logo */
+    --burnt-lit: #e07a2c;  /* the same hue, opened up, for the shimmer peak */
     --sand: #d9c4a5;
     --espresso: #4a3a2e;
     --bone: #ece3d3;
@@ -89,7 +91,7 @@
     width: min(1200px, 88vw); aspect-ratio: 1000 / 69;
     -webkit-mask: url('assets/wordmark.png') center / contain no-repeat;
     mask: url('assets/wordmark.png') center / contain no-repeat;
-    background: linear-gradient(105deg, var(--ink) 40%, #c89a68 50%, #e8c896 52%, var(--ink) 62%) 0 0 / 300% 100%;
+    background: linear-gradient(105deg, var(--ink) 40%, var(--burnt) 50%, var(--burnt-lit) 52%, var(--ink) 62%) 0 0 / 300% 100%;
     animation: shimmer 4.5s ease-in-out infinite;
   }
   @keyframes shimmer {
@@ -111,7 +113,7 @@
     line-height: 1.05; letter-spacing: -0.015em;
     max-width: 14ch;
   }
-  h1 em { font-style: italic; font-weight: 400; color: var(--clay); }
+  h1 em { font-style: italic; font-weight: 400; color: var(--burnt); }
   .sub {
     margin-top: 22px; font-size: 15px; line-height: 1.7;
     color: var(--ink-soft); max-width: 46ch;
@@ -259,7 +261,7 @@
 
 <div class="hero">
   <h1 class="fade d2">The garments <br>of <em>calm</em>.</h1>
-  <p class="sub fade d3">Boxy crops and crew sweats in earth tones — soft enough for Sunday, spooky enough for October. Made one at a time, never in a hurry.</p>
+  <p class="sub fade d3">Therapeutic fashion in earth tones — boxy crops and crew sweats, made one at a time, never in a hurry. Where stillness meets fabric.</p>
   <div class="cta-row fade d4">
     <a class="cta knit" href="https://www.etsy.com/shop/SohoCozy"><canvas class="knit-canvas" aria-hidden="true"></canvas><span>Shop the collection</span></a>
     <a class="cta ghost" href="#waitlist">Join the waitlist</a>
@@ -268,8 +270,8 @@
 </div>
 
 <section class="collection" id="collection">
-  <div class="kicker">First drop · Fall '26</div>
-  <h2 class="sect">Spooky botanicals, <em style="font-style:italic;color:var(--clay)">calm</em> colors.</h2>
+  <div class="kicker">The first drop</div>
+  <h2 class="sect">Where tranquility meets <em style="font-style:italic;color:var(--burnt)">threads</em>.</h2>
   <p class="sect-sub">Four pieces on the cutting table — two already wearing the house mark. Waitlist hears first.</p>
   <div class="grid">
 
@@ -304,7 +306,7 @@
       <div class="art"><canvas class="spin" data-garment="crew" data-color="#d9c4a5" data-decal="fern" aria-label="Crew sweatshirt in sand — drag to spin"></canvas></div>
       <div class="meta">
         <h3>Moss &amp; Marrow Crew</h3>
-        <p>Crew-neck sweat · sand · botanical bones for spooky season</p>
+        <p>Crew-neck sweat · sand · botanical bones, softly gothic</p>
         <span class="tag">Crew sweat</span>
       </div>
     </div>
@@ -315,7 +317,7 @@
 <section class="waitlist" id="waitlist">
   <div class="waitlist-inner">
     <div class="kicker">The soft list</div>
-    <h2 class="sect">Hear it first. <em style="font-style:italic;color:var(--clay)">Wear</em> it first.</h2>
+    <h2 class="sect">Hear it first. <em style="font-style:italic;color:var(--burnt)">Wear</em> it first.</h2>
     <p class="sect-sub">Drop your email and the first drop finds you before it finds anyone else. No noise — we're too calm for spam.</p>
     <form class="wl-form" action="https://formsubmit.co/shop@sohocozystore.com" method="POST">
       <input type="hidden" name="_subject" value="SOHOCOZY waitlist — new soul">
