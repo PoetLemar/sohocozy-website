@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read-only, bounded verification of the SOHOCOZY custom-domain cutover."""
+"""Bounded SOHOCOZY HTTPS verification, with optional certificate DNS sync."""
 
 import argparse
 import concurrent.futures
@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import time
 import urllib.error
 import urllib.parse
@@ -67,6 +68,8 @@ def domain_status():
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--minutes", type=int, default=60, choices=range(1, 121), metavar="1..120")
+    parser.add_argument("--sync-certificate-dns", action="store_true",
+                        help="Create missing SOHOCOZY certificate TXT proofs before each check.")
     args = parser.parse_args()
     os.umask(0o077)
     receipts = Path.home() / ".local/share/sohocozy/receipts"
@@ -74,8 +77,19 @@ def main():
     stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     receipt = receipts / ("production-watch-" + stamp + ".jsonl")
     deadline = time.monotonic() + args.minutes * 60
-    print("Read-only HTTPS verification; receipt: " + str(receipt), flush=True)
+    print(("HTTPS verification with certificate DNS sync" if args.sync_certificate_dns
+           else "Read-only HTTPS verification") + "; receipt: " + str(receipt), flush=True)
     while True:
+        sync = None
+        if args.sync_certificate_dns:
+            try:
+                result = subprocess.run(
+                    [sys.executable, str(Path(__file__).with_name("sync-certificate-dns.py"))],
+                    capture_output=True, text=True, timeout=120)
+                sync = {"exit_code": result.returncode,
+                        "output": result.stdout.strip(), "error": result.stderr.strip()}
+            except subprocess.TimeoutExpired:
+                sync = {"error": "Certificate DNS synchronization timed out; review its receipt."}
         with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
             hosts = list(pool.map(check_host, HOSTS))
         ready = all(host["ready"] for host in hosts)
@@ -85,6 +99,7 @@ def main():
             "status": "ready" if ready else "timed_out" if timed_out else "pending",
             "hosts": hosts,
             "digitalocean": domain_status(),
+            "certificate_dns_sync": sync,
         }
         with receipt.open("a") as stream:
             stream.write(json.dumps(result) + "\n")
