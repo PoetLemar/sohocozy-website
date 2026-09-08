@@ -5,9 +5,10 @@ if (!SC) throw new Error('main scene not exposed');
 const { scene, camera, renderer, silk, silk2, silkMat, sun, rim, ambient } = SC;
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const ETSY = 'https://www.etsy.com/shop/SohoCozy';
+const EMAIL = 'shop@sohocozystore.com';
 const ray = new THREE.Raycaster();
 const ndc = new THREE.Vector2();
-const interactives = [];
+const heroHits = [];
 let pointerX = 0, pointerY = 0;
 
 function frustum(z) {
@@ -17,8 +18,8 @@ function frustum(z) {
 }
 const landscape = () => camera.aspect > 1 && innerWidth >= 820;
 const smooth = (id) => document.getElementById(id)?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' });
-const isDomInteractive = (t) => t && t.closest && t.closest('a,button,input,textarea,form,.piece,canvas.spin,canvas.dock,canvas.loom,header');
-const EMAIL = 'shop@sohocozystore.com';
+const isDomInteractive = (t) => t && t.closest && t.closest('a,button,input,textarea,form,.piece,canvas.spin,canvas.dock,canvas.station,canvas.loom,header');
+
 function whisper(text, ms = 5000) {
   const w = document.getElementById('whisper');
   if (!w) return;
@@ -64,6 +65,36 @@ function applyLook() {
   ambient.intensity = 0.9 - 0.45 * dusk;
   rim.intensity = 0.55 + 0.4 * dusk;
   fireflyMat.opacity = 0.4 + 0.6 * dusk;
+  if (stationLights) {
+    stationLights.key.intensity = 1.15 - 0.35 * dusk;
+    stationLights.amb.intensity = 0.85 - 0.25 * dusk;
+  }
+}
+
+/* ============================================================
+   THE STATION — fixed bottom-left console: yarn, swatches, knob
+   Its own scene + renderer, so it never moves with the scroll.
+   ============================================================ */
+const stCanvas = document.querySelector('canvas.station');
+const stLabel = document.querySelector('.station-label');
+const stScene = new THREE.Scene();
+const stCam = new THREE.OrthographicCamera(-3.9, 3.9, 1.3, -1.3, 0.1, 40);
+stCam.position.set(0, 0, 10);
+let stationLights = null;
+let stRenderer = null;
+const stHits = [];
+let stHover = null;
+
+if (stCanvas) {
+  stRenderer = new THREE.WebGLRenderer({ canvas: stCanvas, alpha: true, antialias: true });
+  stRenderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  const amb = new THREE.AmbientLight(0xfff4e6, 0.85);
+  const key = new THREE.DirectionalLight(0xfff0dc, 1.15);
+  key.position.set(-2, 3, 6);
+  const fill = new THREE.DirectionalLight(0xc9cf9f, 0.35);
+  fill.position.set(3, -2, 4);
+  stScene.add(amb, key, fill);
+  stationLights = { amb, key, fill };
 }
 
 /* ---------- 1. yarn-ball shop button ---------- */
@@ -72,31 +103,177 @@ const yarnCore = new THREE.Mesh(new THREE.SphereGeometry(0.42, 32, 32), new THRE
 yarn.add(yarnCore);
 for (let i = 0; i < 16; i++) {
   const loop = new THREE.Mesh(new THREE.TorusGeometry(0.415, 0.016, 8, 56), new THREE.MeshStandardMaterial({ color: 0xc98d68, roughness: 0.9 }));
-  loop.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+  loop.rotation.set(i * 1.7 % Math.PI, i * 2.3 % Math.PI, i * 0.9 % Math.PI);
   yarn.add(loop);
 }
-const THREAD_N = 48;
+const THREAD_N = 40;
 const threadGeo = new THREE.BufferGeometry().setFromPoints(Array.from({ length: THREAD_N }, () => new THREE.Vector3()));
 const thread = new THREE.Line(threadGeo, new THREE.LineBasicMaterial({ color: 0xc98d68, transparent: true, opacity: 0.9 }));
 yarn.add(thread);
 yarn.userData.hover = 0;
-yarnCore.userData = { owner: yarn, label: 'Roll to the collection', onClick: () => smooth('collection') };
-interactives.push(yarnCore);
-scene.add(yarn);
+const yarnHit = new THREE.Mesh(new THREE.SphereGeometry(0.55, 8, 6), new THREE.MeshBasicMaterial({ visible: false }));
+yarn.add(yarnHit);
+yarnHit.userData = { label: 'Shop', onClick: () => smooth('collection') };
+stHits.push(yarnHit);
+stScene.add(yarn);
 
 /* ---------- 2. fabric-swatch theme picker ---------- */
 const swatches = new THREE.Group();
 Object.entries(PALETTES).forEach(([key, p], i) => {
-  const geo = new THREE.PlaneGeometry(0.5, 0.36, 12, 9);
+  const geo = new THREE.PlaneGeometry(0.46, 0.34, 12, 9);
   const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: p.silk, roughness: 0.85, side: THREE.DoubleSide }));
-  m.userData = { key, base: geo.attributes.position.array.slice(), hover: 0, label: `Retint the silk — ${p.label}`, onClick: () => { palette = PALETTES[key]; applyLook(); } };
-  m.position.y = -i * 0.46;
+  m.userData = { key, base: geo.attributes.position.array.slice(), hover: 0, label: p.label, onClick: () => { palette = PALETTES[key]; applyLook(); whisper(`Tinted ${p.label}.`, 2200); } };
+  m.position.x = i * 0.56;
   swatches.add(m);
-  interactives.push(m);
+  stHits.push(m);
 });
-scene.add(swatches);
+stScene.add(swatches);
 
-/* ---------- 4. swinging hang-tag waitlist button ---------- */
+/* ---------- 5. analog knob — golden hour to dusk ---------- */
+const knob = new THREE.Group();
+const knobSpin = new THREE.Group();          // everything that rotates with the value
+knob.add(knobSpin);
+const METAL = new THREE.MeshStandardMaterial({ color: 0x4a3a2e, roughness: 0.45, metalness: 0.55 });
+const BODY = new THREE.MeshStandardMaterial({ color: 0xd9c4a5, roughness: 0.55, metalness: 0.25 });
+const CAP = new THREE.MeshStandardMaterial({ color: 0xece3d3, roughness: 0.5, metalness: 0.15 });
+
+const bezel = new THREE.Mesh(new THREE.TorusGeometry(0.86, 0.055, 12, 48), METAL);
+knob.add(bezel);
+for (let i = 0; i <= 10; i++) {                // tick marks around the 270-degree sweep
+  const a = -Math.PI * 0.75 + (i / 10) * Math.PI * 1.5;
+  const major = i % 5 === 0;
+  const tick = new THREE.Mesh(new THREE.BoxGeometry(0.022, major ? 0.16 : 0.09, 0.03), METAL);
+  tick.position.set(Math.sin(a) * 1.02, Math.cos(a) * 1.02, 0);
+  tick.rotation.z = -a;
+  knob.add(tick);
+}
+const sunGlow = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.16, 48), new THREE.MeshBasicMaterial({ color: 0xffd9a6, transparent: true, opacity: 0.4, side: THREE.DoubleSide }));
+knob.add(sunGlow);
+
+const body = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.68, 0.34, 48), BODY);
+body.rotation.x = Math.PI / 2;
+knobSpin.add(body);
+for (let i = 0; i < 28; i++) {                 // knurling
+  const a = (i / 28) * Math.PI * 2;
+  const rib = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.34, 0.05), METAL);
+  rib.position.set(Math.cos(a) * 0.65, Math.sin(a) * 0.65, 0);
+  rib.rotation.z = a;
+  knobSpin.add(rib);
+}
+const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.06, 40), CAP);
+cap.rotation.x = Math.PI / 2;
+cap.position.z = 0.18;
+knobSpin.add(cap);
+const pointer = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.4, 0.04), new THREE.MeshStandardMaterial({ color: 0x4a3a2e, roughness: 0.5 }));
+pointer.position.set(0, 0.24, 0.23);
+knobSpin.add(pointer);
+
+const knobHit = new THREE.Mesh(new THREE.CircleGeometry(0.95, 16), new THREE.MeshBasicMaterial({ visible: false }));
+knobHit.position.z = 0.4;
+knobHit.userData = { drag: true, label: 'Dusk' };
+knob.add(knobHit);
+stHits.push(knobHit);
+stScene.add(knob);
+
+const KNOB_MIN = -Math.PI * 0.75, KNOB_MAX = Math.PI * 0.75;
+let knobAngle = KNOB_MIN;
+let dragging = false, dragX = 0, dragY = 0;
+function setKnob(angle) {
+  knobAngle = THREE.MathUtils.clamp(angle, KNOB_MIN, KNOB_MAX);
+  knobSpin.rotation.z = -knobAngle;
+  dusk = (knobAngle - KNOB_MIN) / (KNOB_MAX - KNOB_MIN);
+  applyLook();
+}
+
+/* Drop-in slot for the BlenderKit knob: if assets/knob.glb exists it replaces
+   the procedural body, keeping the same rotation rig, hit area and behaviour. */
+async function tryLoadKnobModel() {
+  try {
+    const head = await fetch('assets/knob.glb', { method: 'HEAD' });
+    if (!head.ok) return;
+    const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
+    const gltf = await new GLTFLoader().loadAsync('assets/knob.glb');
+    const model = gltf.scene;
+    const box = new THREE.Box3().setFromObject(model);
+    const size = new THREE.Vector3(); box.getSize(size);
+    const center = new THREE.Vector3(); box.getCenter(center);
+    const target = 1.36;                                  // match the procedural knob's diameter
+    const s = target / Math.max(size.x, size.y, size.z || 1);
+    model.position.sub(center).multiplyScalar(s);
+    model.scale.setScalar(s);
+    knobSpin.clear();
+    knobSpin.add(model);
+    whisper('Knob model loaded.', 2500);
+  } catch (e) { /* keep the procedural knob */ }
+}
+tryLoadKnobModel();
+
+/* ---------- station layout + interaction ---------- */
+function stationLayout() {
+  if (!stCanvas || !stRenderer) return;
+  const w = stCanvas.clientWidth, h = stCanvas.clientHeight;
+  if (!w || !h) return;
+  stRenderer.setSize(w, h, false);
+  const halfH = 1.3, halfW = halfH * (w / h);
+  stCam.left = -halfW; stCam.right = halfW; stCam.top = halfH; stCam.bottom = -halfH;
+  stCam.updateProjectionMatrix();
+  const knobR = 1.16;
+  knob.position.set(halfW - knobR - 0.12, 0, 0);
+  yarn.position.set(-halfW + 0.62, 0, 0);
+  const swatchSpan = 3 * 0.56;
+  const gapStart = -halfW + 1.28;
+  const gapEnd = knob.position.x - knobR - 0.25;
+  swatches.position.set(Math.max(gapStart, (gapStart + gapEnd - swatchSpan) / 2), 0, 0);
+}
+
+function stationPick(e) {
+  if (!stCanvas) return null;
+  const b = stCanvas.getBoundingClientRect();
+  ndc.set(((e.clientX - b.left) / b.width) * 2 - 1, -((e.clientY - b.top) / b.height) * 2 + 1);
+  ray.setFromCamera(ndc, stCam);
+  const hit = ray.intersectObjects(stHits, false)[0];
+  return hit ? hit.object : null;
+}
+if (stCanvas) {
+  stCanvas.addEventListener('pointermove', (e) => {
+    if (dragging) {
+      const dx = e.clientX - dragX, dy = e.clientY - dragY;
+      dragX = e.clientX; dragY = e.clientY;
+      setKnob(knobAngle + (dx - dy) * 0.012);
+      return;
+    }
+    const h = stationPick(e);
+    if (h !== stHover) {
+      stHover = h;
+      stCanvas.style.cursor = h ? (h.userData.drag ? 'grab' : 'pointer') : 'default';
+      if (stLabel) stLabel.textContent = h ? h.userData.label : '';
+    }
+  });
+  stCanvas.addEventListener('pointerleave', () => { if (!dragging) { stHover = null; if (stLabel) stLabel.textContent = ''; } });
+  stCanvas.addEventListener('pointerdown', (e) => {
+    const h = stationPick(e);
+    if (h && h.userData.drag) {
+      dragging = true; dragX = e.clientX; dragY = e.clientY;
+      stCanvas.setPointerCapture(e.pointerId);
+      stCanvas.style.cursor = 'grabbing';
+      e.preventDefault();
+    }
+  });
+  const endDrag = () => { if (dragging) { dragging = false; stCanvas.style.cursor = 'grab'; } };
+  stCanvas.addEventListener('pointerup', endDrag);
+  stCanvas.addEventListener('pointercancel', endDrag);
+  addEventListener('blur', endDrag);
+  stCanvas.addEventListener('click', (e) => {
+    const h = stationPick(e);
+    if (h && h.userData.onClick) h.userData.onClick();
+  });
+  stCanvas.addEventListener('wheel', (e) => {
+    const h = stationPick(e);
+    if (h && h.userData.drag) { e.preventDefault(); setKnob(knobAngle + Math.sign(e.deltaY) * 0.14); }
+  }, { passive: false });
+}
+
+/* ---------- 4. swinging hang-tag (stays in the hero) ---------- */
 const tag = new THREE.Group();
 const tagLen = { v: 1.6 };
 const string = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(0, -1, 0)]), new THREE.LineBasicMaterial({ color: 0x7a6a5a }));
@@ -123,27 +300,12 @@ tagBody.add(tagLabel);
 tag.add(tagBody);
 const tagHit = new THREE.Mesh(new THREE.SphereGeometry(0.75, 8, 6), new THREE.MeshBasicMaterial({ visible: false }));
 tagBody.add(tagHit);
-tagHit.userData = { owner: tag, label: 'Join the soft list', onClick: () => smooth('waitlist') };
-interactives.push(tagHit);
+tagHit.userData = { label: 'Join the soft list', onClick: () => smooth('waitlist') };
+heroHits.push(tagHit);
 const pend = { a: 0.35, v: 0 };
 scene.add(tag);
 
-/* ---------- 5. sun-dial dusk dial ---------- */
-const dial = new THREE.Group();
-const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.09, 48), new THREE.MeshStandardMaterial({ color: 0xc4562a, roughness: 0.8 }));
-disc.rotation.x = Math.PI / 2;
-dial.add(disc);
-const notch = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.16, 0.05), new THREE.MeshStandardMaterial({ color: 0xf6efe6 }));
-notch.position.set(0, 0.38, 0.06);
-dial.add(notch);
-const halo = new THREE.Mesh(new THREE.RingGeometry(0.54, 0.6, 48), new THREE.MeshBasicMaterial({ color: 0xffd9a6, transparent: true, opacity: 0.5, side: THREE.DoubleSide }));
-dial.add(halo);
-disc.userData = { owner: dial, label: 'Drag the sun — golden hour to dusk', drag: true };
-interactives.push(disc);
-let dialAngle = 0, dragging = false, dragX = 0;
-scene.add(dial);
-
-/* ---------- 6. catchable fireflies ---------- */
+/* ---------- 6. catchable fireflies (hero) ---------- */
 const glowCanvas = document.createElement('canvas'); glowCanvas.width = glowCanvas.height = 64;
 {
   const c = glowCanvas.getContext('2d');
@@ -156,118 +318,76 @@ const fireflies = [];
 let caught = 0;
 for (let i = 0; i < 7; i++) {
   const s = new THREE.Sprite(fireflyMat.clone());
-  s.scale.setScalar(0.22 + Math.random() * 0.12);
-  s.userData = { seed: Math.random() * 100, alive: 1, respawn: 0, label: 'Catch the light', onClick: () => catchFly(s) };
-  fireflies.push(s); interactives.push(s); scene.add(s);
+  s.scale.setScalar(0.26);
+  s.userData = { seed: (i * 13.37) % 100, alive: 1, respawn: 0, label: 'Catch the light', onClick: () => catchFly(s) };
+  fireflies.push(s); heroHits.push(s); scene.add(s);
 }
 function catchFly(s) {
   if (s.userData.alive < 1) return;
   s.userData.alive = 0.999; caught++;
-  const w = document.getElementById('whisper');
   const lines = [
     'You caught the light. The soft list hears one day early for you.',
-    'Two fireflies. Somebody\'s going to have first pick.',
+    "Two fireflies. Somebody's going to have first pick.",
     'A jar full. The first drop is basically yours.',
   ];
-  w.querySelector('span').textContent = lines[Math.min(caught, 3) - 1];
-  w.hidden = false;
-  clearTimeout(w._t); w._t = setTimeout(() => { w.hidden = true; }, 6000);
+  whisper(lines[Math.min(caught, 3) - 1], 6000);
 }
 
-/* ---------- layout for hero-scene objects ---------- */
-const heroEl = document.querySelector('.hero');
-function pxToWorld(px, py, z) {
-  const { hw, hh } = frustum(z);
-  return [-hw + (px / innerWidth) * 2 * hw, hh - (py / innerHeight) * 2 * hh];
-}
+/* ---------- hero layout + pointer ---------- */
 let flyScale = 1;
 function layout() {
   const z = 1.0;
   const { hw, hh } = frustum(z);
   const wide = landscape();
-  const rect = heroEl.getBoundingClientRect();
-  const band = parseFloat(getComputedStyle(heroEl).paddingBottom) || 150;
   const pxPerUnit = innerHeight / (2 * hh);
-  const ref = 217 / pxPerUnit;
-  const fit = band / (2 * 0.62 * pxPerUnit);
-  const widthCap = (0.09 * innerWidth) / (0.45 * pxPerUnit);
-  const s = Math.min(ref, fit, widthCap);
-  flyScale = Math.min(ref, (0.07 * innerWidth) / (0.28 * pxPerUnit));
-  const bandY = rect.bottom - band / 2;
-  const r = 0.45 * s * pxPerUnit;
-  const leftPad = wide ? Math.max(48, Math.min(innerWidth * 0.09, 170)) : 20;
-  let [x, y] = pxToWorld(leftPad + r, bandY, z);
-  yarn.position.set(x, y, z);
-  yarn.scale.setScalar(s);
-  const rowW = 3 * 0.58 * 0.85 * s * pxPerUnit;
-  const rowX = wide ? leftPad + r * 2 + 40 : Math.max(leftPad + r * 2 + 16, innerWidth * 0.5 - rowW / 2);
-  [x, y] = pxToWorld(rowX, bandY, z);
-  swatches.position.set(x, y, z);
-  swatches.children.forEach((m, i) => m.position.set(i * 0.58, 0, 0));
-  [x, y] = pxToWorld(wide ? innerWidth * 0.55 : innerWidth - 20 - r, bandY, z);
-  dial.position.set(x, y, z);
-  dial.scale.setScalar(s * 0.9);
-  swatches.scale.setScalar(s * 0.85);
+  flyScale = Math.min(1, (0.07 * innerWidth) / (0.28 * pxPerUnit));
   tag.position.set(hw * (wide ? 0.42 : 0.72), hh + 0.05, z);
   tagLen.v = wide ? 1.6 : Math.min(0.9, 110 / pxPerUnit);
-  tag.scale.setScalar(Math.min(1, s * 1.15));
+  tag.scale.setScalar(wide ? 1 : Math.min(1, hw / 1.9));
+  stationLayout();
 }
 layout();
 addEventListener('resize', layout);
-addEventListener('scroll', layout, { passive: true });
 
-/* ---------- pointer handling on the main scene ---------- */
-let hovered = null;
-function castAt(clientX, clientY) {
-  ndc.set((clientX / innerWidth) * 2 - 1, -(clientY / innerHeight) * 2 + 1);
+let heroHover = null;
+function heroPick(x, y) {
+  ndc.set((x / innerWidth) * 2 - 1, -(y / innerHeight) * 2 + 1);
   ray.setFromCamera(ndc, camera);
-  const hit = ray.intersectObjects(interactives, false)[0];
+  const hit = ray.intersectObjects(heroHits, false)[0];
   return hit ? hit.object : null;
 }
 addEventListener('pointermove', (e) => {
   pointerX = e.clientX; pointerY = e.clientY;
-  if (dragging) { dialAngle += (e.clientX - dragX) * 0.012; dragX = e.clientX; dusk = THREE.MathUtils.clamp((Math.sin(dialAngle - Math.PI / 2) + 1) / 2, 0, 1); applyLook(); return; }
-  if (isDomInteractive(e.target)) { if (hovered) { hovered = null; document.body.style.cursor = ''; } return; }
-  const h = castAt(e.clientX, e.clientY);
-  if (h !== hovered) {
-    hovered = h;
-    document.body.style.cursor = h ? (h.userData.drag ? 'grab' : 'pointer') : '';
+  if (isDomInteractive(e.target)) { if (heroHover) { heroHover = null; document.body.style.cursor = ''; } return; }
+  const h = heroPick(e.clientX, e.clientY);
+  if (h !== heroHover) {
+    heroHover = h;
+    document.body.style.cursor = h ? 'pointer' : '';
     document.body.title = h ? h.userData.label : '';
   }
 });
-addEventListener('pointerdown', (e) => {
-  if (isDomInteractive(e.target)) return;
-  const h = castAt(e.clientX, e.clientY);
-  if (h && h.userData.drag) { dragging = true; dragX = e.clientX; document.body.style.cursor = 'grabbing'; e.preventDefault(); }
-});
-function endDrag() { if (dragging) { dragging = false; document.body.style.cursor = 'grab'; } }
-addEventListener('pointerup', endDrag);
-addEventListener('pointercancel', endDrag);
-addEventListener('mouseup', endDrag);
-addEventListener('blur', endDrag);
 addEventListener('click', (e) => {
-  if (e.buttons === 0) endDrag();
   if (isDomInteractive(e.target)) return;
-  const h = castAt(e.clientX, e.clientY);
+  const h = heroPick(e.clientX, e.clientY);
   if (h && h.userData.onClick) h.userData.onClick();
 });
 
-/* ---------- per-frame for hero-scene objects ---------- */
+/* ---------- per-frame ---------- */
 let last = 0;
 SC.ticks.push((t) => {
   const dt = Math.min(0.05, t - last); last = t;
   const { hw, hh } = frustum(1.0);
 
+  /* station */
   yarn.rotation.y += 0.004; yarn.rotation.x = Math.sin(t * 0.5) * 0.15;
-  const yh = hovered === yarnCore ? 1 : 0;
+  const yh = stHover === yarnHit ? 1 : 0;
   yarn.userData.hover += (yh - yarn.userData.hover) * 0.08;
   const yhv = yarn.userData.hover;
-  yarnCore.parent.scale.setScalar(yarn.scale.x);
   const tp = threadGeo.attributes.position.array;
   for (let i = 0; i < THREAD_N; i++) {
     const k = i / (THREAD_N - 1);
-    tp[i * 3] = 0.3 + k * 2.2 * yhv;
-    tp[i * 3 + 1] = -0.3 - k * 0.5 * yhv + Math.sin(k * 9 + t * 2) * 0.06 * yhv;
+    tp[i * 3] = 0.3 + k * 0.9 * yhv;
+    tp[i * 3 + 1] = -0.3 - k * 0.35 * yhv + Math.sin(k * 9 + t * 2) * 0.05 * yhv;
     tp[i * 3 + 2] = 0.1;
   }
   threadGeo.attributes.position.needsUpdate = true;
@@ -276,15 +396,23 @@ SC.ticks.push((t) => {
     const p = m.geometry.attributes.position.array, b = m.userData.base;
     for (let j = 0; j < p.length; j += 3) p[j + 2] = Math.sin(b[j] * 6 + t * 1.6 + i) * 0.03 + Math.sin(b[j + 1] * 8 + t) * 0.02;
     m.geometry.attributes.position.needsUpdate = true; m.geometry.computeVertexNormals();
-    const target = hovered === m ? 1 : 0;
-    m.userData.hover += (target - m.userData.hover) * 0.1;
-    m.position.z = 0.18 * m.userData.hover;
+    const target = stHover === m ? 1 : 0;
+    m.userData.hover += (target - m.userData.hover) * 0.12;
+    m.position.z = 0.22 * m.userData.hover;
+    m.position.y = 0.06 * m.userData.hover;
     m.rotation.z = Math.sin(t * 0.8 + i) * 0.05;
+    const active = PALETTES[m.userData.key] === palette;
+    m.scale.setScalar(active ? 1.12 : 1);
   });
 
+  sunGlow.material.opacity = 0.42 * (1 - dusk) + 0.08;
+  sunGlow.material.color.setHex(dusk > 0.5 ? 0x9a86c9 : 0xffd9a6);
+  knob.scale.setScalar(stHover === knobHit || dragging ? 1.05 : 1);
+  if (stRenderer) stRenderer.render(stScene, stCam);
+
+  /* hero: hang-tag */
   const px = (pointerX / innerWidth - 0.5) * hw * 2;
-  const tagWorldX = tag.position.x;
-  const push = Math.exp(-Math.abs(px - tagWorldX) * 0.9) * (px < tagWorldX ? -1 : 1) * 0.6;
+  const push = Math.exp(-Math.abs(px - tag.position.x) * 0.9) * (px < tag.position.x ? -1 : 1) * 0.6;
   const gravity = -4.5 * Math.sin(pend.a);
   pend.v += (gravity - pend.v * 0.9 + push + Math.sin(t * 0.7) * 0.25) * dt;
   pend.a += pend.v * dt;
@@ -292,16 +420,14 @@ SC.ticks.push((t) => {
   const L = tagLen.v;
   string.geometry.attributes.position.array[4] = -L; string.geometry.attributes.position.needsUpdate = true;
   tagBody.position.y = -L - 0.42;
-  tagBody.scale.setScalar(hovered === tagHit ? 1.08 : 1);
+  tagBody.scale.setScalar(heroHover === tagHit ? 1.08 : 1);
 
-  dial.rotation.z = dialAngle;
-  halo.material.opacity = 0.35 + 0.25 * Math.sin(t * 1.5) - dusk * 0.25;
-
-  fireflies.forEach((s, i) => {
+  /* hero: fireflies */
+  fireflies.forEach((s) => {
     const u = s.userData;
     if (u.alive < 1) {
       u.alive -= dt * 1.6;
-      if (u.alive <= 0) { u.alive = -1; u.respawn = t + 5; u.seed = Math.random() * 100; }
+      if (u.alive <= 0) { u.alive = -1; u.respawn = t + 5; }
       const g = Math.max(0, u.alive);
       s.material.opacity = fireflyMat.opacity * g; s.scale.setScalar(0.26 * flyScale * (1 + (1 - g) * 2.5));
       if (u.alive === -1 && t > u.respawn) { u.alive = 1; s.material.opacity = fireflyMat.opacity; }
@@ -520,7 +646,7 @@ SC.ticks.push((t) => {
     let vel = 0, down = false, lastX = 0, moved = 0, idle = 0, rot = 0;
     cv.addEventListener('pointerdown', (e) => { down = true; lastX = e.clientX; moved = 0; cv.setPointerCapture(e.pointerId); cv.style.cursor = 'grabbing'; });
     cv.addEventListener('pointermove', (e) => { if (!down) return; const dx = e.clientX - lastX; lastX = e.clientX; moved += Math.abs(dx); vel = dx * 0.012; rot += vel; idle = 0; });
-    cv.addEventListener('pointerup', (e) => { down = false; cv.style.cursor = 'grab'; if (moved < 5) location.href = ETSY; });
+    cv.addEventListener('pointerup', () => { down = false; cv.style.cursor = 'grab'; if (moved < 5) location.href = ETSY; });
     cv.title = 'Drag to spin · click to shop';
     function size() { const w = cv.clientWidth, h = cv.clientHeight; r.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix(); }
     size(); addEventListener('resize', size);
@@ -534,5 +660,8 @@ SC.ticks.push((t) => {
   });
 })();
 
+SC.station = { scene: stScene, camera: stCam, canvas: stCanvas, hits: stHits, knob, yarn, swatches,
+  get dusk() { return dusk; }, get palette() { return palette.label; } };
+setKnob(KNOB_MIN);
 applyLook();
 if (reduced) SC.ticks.forEach(f => f(0.001));

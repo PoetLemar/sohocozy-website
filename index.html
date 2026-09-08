@@ -52,8 +52,16 @@
   .loom { position: fixed; top: 0; left: 0; width: 100%; height: 14px; z-index: 12; cursor: pointer; display: block; }
   .dock-wrap { position: fixed; right: 14px; bottom: 12px; z-index: 12; text-align: center; }
   .dock { width: 210px; height: 80px; display: block; }
-  @media (max-width: 600px) { .dock { width: 150px; height: 60px; } }
-  .dock-label { font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase; color: var(--ink-soft); height: 14px; margin-top: 2px; }
+  .station-wrap { position: fixed; left: 14px; bottom: 12px; z-index: 12; text-align: center; }
+  .station { width: 330px; height: 112px; display: block; touch-action: none; }
+  @media (max-width: 900px) { .station { width: 260px; height: 88px; } .dock { width: 170px; height: 66px; } }
+  @media (max-width: 600px) {
+    .dock { width: 124px; height: 50px; }
+    .station { width: 196px; height: 66px; }
+    .dock-wrap, .station-wrap { bottom: 8px; }
+    .dock-wrap { right: 8px; } .station-wrap { left: 8px; }
+  }
+  .dock-label, .station-label { font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase; color: var(--ink-soft); height: 14px; margin-top: 2px; }
   .whisper {
     position: fixed; left: 50%; bottom: 112px; transform: translateX(-50%); z-index: 20;
     background: var(--bone); color: var(--ink); padding: 14px 22px; border-radius: 999px;
@@ -88,7 +96,7 @@
     min-height: 100vh; min-height: 100svh;
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
-    text-align: center; padding: clamp(130px, 14vw, 190px) 24px 190px;
+    text-align: center; padding: clamp(130px, 14vw, 190px) 24px clamp(150px, 16vw, 200px);
   }
   h1 {
     font-family: 'Fraunces', serif; font-weight: 300;
@@ -161,7 +169,7 @@
   footer {
     position: relative; z-index: 3; background: var(--cream);
     display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;
-    padding: 26px 36px; font-size: 12px; color: var(--ink-soft); letter-spacing: .06em;
+    padding: 26px 36px 130px; font-size: 12px; color: var(--ink-soft); letter-spacing: .06em;
     border-top: 1px solid rgba(61,49,40,.12);
   }
   footer a { color: var(--ink-soft); text-decoration: none; border-bottom: 1px solid rgba(122,106,90,.35); }
@@ -229,6 +237,7 @@
 <div class="veil"></div>
 <canvas class="loom" aria-label="Scroll progress loom"></canvas>
 <div class="dock-wrap"><canvas class="dock" aria-label="Flower navigation: shop, waitlist, email"></canvas><div class="dock-label"></div></div>
+<div class="station-wrap"><canvas class="station" aria-label="Control station: yarn-ball shop button, fabric swatch tints, and the dusk knob"></canvas><div class="station-label"></div></div>
 <div id="whisper" class="whisper" hidden><span></span><a href="#waitlist">Join the soft list</a></div>
 
 <header class="fade d1">
@@ -315,7 +324,10 @@
 </footer>
 
 <script type="importmap">
-{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.module.js" } }
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.168.0/examples/jsm/"
+} }
 </script>
 <script type="module">
 import * as THREE from 'three';
