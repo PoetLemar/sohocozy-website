@@ -195,19 +195,44 @@ async function tryLoadKnobModel() {
     const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
     const gltf = await new GLTFLoader().loadAsync('assets/knob.glb');
     const model = gltf.scene;
-    const box = new THREE.Box3().setFromObject(model);
+    // A knob's rotation axis is its SHORTEST dimension; glTF's Y-up export
+    // usually leaves that pointing at the ceiling. Turn it to face the camera.
+    let box = new THREE.Box3().setFromObject(model);
     const size = new THREE.Vector3(); box.getSize(size);
+    const axis = size.x <= size.y && size.x <= size.z ? 'x' : (size.y <= size.z ? 'y' : 'z');
+    if (axis === 'y') model.rotation.x = -Math.PI / 2;
+    else if (axis === 'x') model.rotation.y = Math.PI / 2;
+    model.updateMatrixWorld(true);
+    box = new THREE.Box3().setFromObject(model);
+    const size2 = new THREE.Vector3(); box.getSize(size2);
     const center = new THREE.Vector3(); box.getCenter(center);
     const target = 1.36;                                  // match the procedural knob's diameter
-    const s = target / Math.max(size.x, size.y, size.z || 1);
-    model.position.sub(center).multiplyScalar(s);
-    model.scale.setScalar(s);
+    const s = target / Math.max(size2.x, size2.y, 1e-6);
+    // tint the imported knob into the SOHOCOZY palette
+    model.traverse((o) => {
+      if (o.isMesh) {
+        o.material = new THREE.MeshStandardMaterial({ color: 0xe4d8c2, roughness: 0.52, metalness: 0.18 });
+      }
+    });
+    const holder = new THREE.Group();
+    holder.add(model);
+    model.position.sub(center);
+    holder.scale.setScalar(s);
     knobSpin.clear();
-    knobSpin.add(model);
+    knobSpin.add(holder);
     whisper('Knob model loaded.', 2500);
   } catch (e) { /* keep the procedural knob */ }
 }
 tryLoadKnobModel();
+
+/* Solo inspection view: ?solo=knob isolates the knob, large and centred. */
+const SOLO = new URLSearchParams(location.search).get('solo');
+if (SOLO === 'knob') {
+  yarn.visible = false; swatches.visible = false;
+  root.setProperty('--st-w', 'min(94vw, 94svh)');
+  const wrap = document.querySelector('.station-wrap');
+  if (wrap) { wrap.style.left = '50%'; wrap.style.bottom = '50%'; wrap.style.transform = 'translate(-50%, 50%)'; }
+}
 
 /* ---------- station layout + interaction ---------- */
 function stationLayout() {
@@ -218,6 +243,7 @@ function stationLayout() {
   const halfH = 1.3, halfW = halfH * (w / h);
   stCam.left = -halfW; stCam.right = halfW; stCam.top = halfH; stCam.bottom = -halfH;
   stCam.updateProjectionMatrix();
+  if (SOLO === 'knob') { knob.position.set(0, 0, 0); return; }
   // even-gap cluster: [yarn] g [swatches] g [knob], margins equal at both ends
   const knobR = 1.16, yarnR = 0.55, swW = 3 * 0.56 + 0.46, margin = 0.22;
   const gap = Math.max(0.35, (2 * halfW - 2 * margin - (yarnR * 2 + swW + knobR * 2)) / 2);
