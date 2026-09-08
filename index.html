@@ -31,24 +31,28 @@
     background: var(--cream);
     color: var(--ink);
   }
-  #scene { position: fixed; inset: 0; display: block; z-index: 0; }
+  .hero-video {
+    position: fixed; inset: 0; z-index: 0;
+    width: 100%; height: 100%; object-fit: cover;
+  }
+  #scene { position: fixed; inset: 0; display: block; z-index: 1; }
   .veil {
-    position: fixed; inset: 0; pointer-events: none; z-index: 1;
+    position: fixed; inset: 0; pointer-events: none; z-index: 2;
     background: radial-gradient(ellipse at 50% 42%, transparent 40%, rgba(246,239,230,.55) 100%);
   }
   header {
     position: fixed; top: 0; left: 0; right: 0; z-index: 10;
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 26px 36px;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    gap: 8px; padding: 24px 20px 0;
   }
-  .mark-img { width: 200px; height: auto; display: block; }
+  .mark-img { width: min(1200px, 88vw); height: auto; display: block; }
   .wink { font-size: 11px; letter-spacing: .18em; color: var(--ink-soft); font-style: italic; font-family: 'Fraunces', serif; }
   .hero {
-    position: relative; z-index: 2;
+    position: relative; z-index: 3;
     min-height: 100vh; min-height: 100svh;
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
-    text-align: center; padding: 96px 24px 60px;
+    text-align: center; padding: clamp(150px, 18vw, 210px) 24px 60px;
   }
   h1 {
     font-family: 'Fraunces', serif; font-weight: 300;
@@ -77,8 +81,8 @@
   }
   .cta.ghost:hover { background: rgba(61,49,40,.06); }
   .scroll-hint { margin-top: 56px; font-size: 11px; letter-spacing: .3em; color: var(--ink-soft); text-transform: uppercase; }
-  .hero-logo { width: clamp(220px, 34vw, 360px); height: auto; margin-bottom: 0; }
-  section { position: relative; z-index: 2; background: var(--cream); }
+  .hero-logo { width: clamp(240px, 38vw, 430px); height: auto; margin-bottom: 0; mix-blend-mode: multiply; border-radius: 24px; }
+  section { position: relative; z-index: 3; background: var(--cream); }
   .collection { padding: 90px 24px 40px; max-width: 1080px; margin: 0 auto; background: transparent; }
   .kicker { font-size: 11px; letter-spacing: .3em; text-transform: uppercase; color: var(--moss-deep); text-align: center; }
   h2.sect {
@@ -119,7 +123,7 @@
   .wl-form input[type=email]:focus { border-color: var(--clay); }
   .fine { margin-top: 16px; font-size: 11.5px; color: var(--ink-soft); }
   footer {
-    position: relative; z-index: 2; background: var(--cream);
+    position: relative; z-index: 3; background: var(--cream);
     display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;
     padding: 26px 36px; font-size: 12px; color: var(--ink-soft); letter-spacing: .06em;
     border-top: 1px solid rgba(61,49,40,.12);
@@ -132,11 +136,11 @@
   @media (max-width: 600px) {
     header, footer { padding: 20px 20px; }
     .wink { display: none; }
-    .mark-img { width: 160px; }
   }
 </style>
 </head>
 <body>
+<video class="hero-video" autoplay muted loop playsinline poster="assets/logo-hero.png" src="assets/logo-motion.mp4" aria-label="SOHOCOZY moving logo — a potted plant before a terracotta sun"></video>
 <canvas id="scene"></canvas>
 <div class="veil"></div>
 
@@ -146,7 +150,6 @@
 </header>
 
 <div class="hero">
-  <img class="hero-logo fade d1" src="assets/logo-hero.png" alt="SOHOCOZY logo — a potted plant before a terracotta sun">
   <h1 class="fade d2">The garments <br>of <em>calm</em>.</h1>
   <p class="sub fade d3">Boxy crops and crew sweats in earth tones — soft enough for Sunday, spooky enough for October. Made one at a time, never in a hurry.</p>
   <div class="cta-row fade d4">
